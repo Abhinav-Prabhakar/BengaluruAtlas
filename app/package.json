@@ -1,0 +1,27 @@
+{
+  "name": "bengaluru-atlas",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A field guide to Bengaluru's tiffin rooms, lakes, temples, bookshops and hidden corners.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5173 --strictPort",
+    "build": "node node_modules/typescript/bin/tsc --noEmit && node node_modules/vite/bin/vite.js build",
+    "preview": "node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4173 --strictPort",
+    "data": "python3 ../scripts/02_build_atlas.py && python3 ../scripts/03_style_maps.py"
+  },
+  "dependencies": {
+    "lucide-react": "0.555.0",
+    "maplibre-gl": "5.9.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.6",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "5.1.1",
+    "typescript": "5.9.3",
+    "vite": "7.3.8"
+  }
+}

@@ -1,0 +1,16 @@
+# Data dumps (regenerate with scripts/)
+data/raw/
+data/processed/
+*.parquet
+*.pmtiles
+*.duckdb
+*.osm.pbf
+
+# App
+node_modules/
+dist/
+.env
+.env.*
+
+# OS
+.DS_Store
