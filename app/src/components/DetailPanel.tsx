@@ -12,17 +12,20 @@ import {
   Phone,
   Share2,
   Star,
+  Sunset,
   X,
+  Route,
 } from 'lucide-react';
 import { CATEGORY_BY_ID, MODE_BY_ID, categoryColor } from '../lib/catalog';
 import { formatCoords, formatDistance } from '../lib/geo';
+import { formatArrivalClock, formatClockMinutes } from '../lib/hours';
 import {
   describePlace,
   googleMapsDirectionsUrl,
   googleMapsSearchUrl,
   placeFacts,
 } from '../lib/places';
-import type { Place, Theme, TravelMode } from '../lib/types';
+import type { ArrivalInfo, Place, Theme, TravelMode } from '../lib/types';
 import CoverArt, { coverSeed } from './CoverArt';
 
 interface DetailPanelProps {
@@ -36,6 +39,10 @@ interface DetailPanelProps {
   traffic?: 'light' | 'moving' | 'heavy' | 'gridlock';
   kmph?: number;
   freeKmph?: number;
+  arrival?: ArrivalInfo | null;
+  sunsetMinute?: number | null;
+  nowMinute?: number;
+  onTheWay?: Array<{ place: Place; extraMinutes: number }>;
   saved: boolean;
   visited: boolean;
   onClose: () => void;
@@ -61,6 +68,10 @@ export default function DetailPanel({
   traffic,
   kmph,
   freeKmph,
+  arrival,
+  sunsetMinute,
+  nowMinute,
+  onTheWay = [],
   saved,
   visited,
   onClose,
@@ -96,6 +107,25 @@ export default function DetailPanel({
     'https://m.uber.com/ul/?action=setPickup&pickup=my_location' +
     `&dropoff[latitude]=${place.lat}&dropoff[longitude]=${place.lon}` +
     `&dropoff[nickname]=${encodeURIComponent(place.name)}`;
+
+  const sunsetNote =
+    place.cat === 'outdoors' &&
+    sunsetMinute != null &&
+    nowMinute != null &&
+    nowMinute <= sunsetMinute + 30 &&
+    arrival?.state !== 'closed'
+      ? (() => {
+          const leaveBy = sunsetMinute - minutes;
+          const cushion = sunsetMinute - nowMinute - minutes;
+          if (cushion <= 0) {
+            return `Sunset is at ${formatClockMinutes(sunsetMinute)} — you'd arrive after it.`;
+          }
+          if (leaveBy > nowMinute + 2) {
+            return `Leave by ${formatClockMinutes(leaveBy)} to catch sunset at ${formatClockMinutes(sunsetMinute)}.`;
+          }
+          return `You'd reach ${cushion} min before sunset at ${formatClockMinutes(sunsetMinute)}.`;
+        })()
+      : null;
 
   return (
     <>
@@ -184,13 +214,60 @@ export default function DetailPanel({
             </p>
             {traffic && (
               <p className={`detail-traffic is-${traffic}`}>
-                <i className="live-dot" aria-hidden="true" />
                 Live traffic: {traffic}
                 {kmph
                   ? ` · ${Math.round(kmph)}${
                       freeKmph ? ` of ${Math.round(freeKmph)}` : ''
                     } km/h${freeKmph ? ' free flow' : ' on the nearest corridor'}`
                   : ''}
+              </p>
+            )}
+            {arrival?.state === 'closed' && (
+              <p className="detail-hours is-closed">
+                <Clock3 size={12} />
+                <span>
+                  Closed when you arrive
+                  {arrival.opensAt != null
+                    ? ` · opens ${formatArrivalClock(arrival.opensAt)}`
+                    : ''}
+                </span>
+              </p>
+            )}
+            {arrival?.state === 'open' && arrival.closingSoon && (
+              <p className="detail-hours is-closing">
+                <Clock3 size={12} />
+                <span>
+                  Closes {formatArrivalClock(arrival.closesAt)} — you would arrive
+                  around {formatClockMinutes(arrival.arrivalAt)}
+                </span>
+              </p>
+            )}
+            {arrival?.state === 'open' &&
+              !arrival.closingSoon &&
+              arrival.closesAt != null && (
+                <p className="detail-hours">
+                  <Clock3 size={12} />
+                  <span>
+                    Open when you arrive · closes{' '}
+                    {formatArrivalClock(arrival.closesAt)}
+                  </span>
+                </p>
+              )}
+            {sunsetNote && (
+              <p className="detail-sunset">
+                <Sunset size={12} />
+                <span>{sunsetNote}</span>
+              </p>
+            )}
+            {onTheWay.length > 0 && (
+              <p className="detail-onway">
+                <Route size={12} />
+                <span>
+                  On your way:{' '}
+                  {onTheWay
+                    .map(({ place: stop, extraMinutes }) => `${stop.name} (+${extraMinutes} min)`)
+                    .join(' · ')}
+                </span>
               </p>
             )}
           </div>

@@ -2,7 +2,7 @@ import { DEFAULT_MINUTES, DEFAULT_MODE, MODE_BY_ID, TIME_STOPS } from './catalog
 import { nearestArea } from './geo';
 import { MOOD_BY_ID } from './moods';
 import { resolvePlaceId } from './places';
-import type { Atlas, Origin, Place, Trail, TravelMode } from './types';
+import type { Atlas, Origin, Place, TabId, Trail, TravelMode } from './types';
 
 export interface InitialState {
   origin: Origin;
@@ -12,6 +12,9 @@ export interface InitialState {
   query: string;
   place: Place | null;
   trail: Trail | null;
+  tab: TabId;
+  /** A saved list that arrived in the URL, ready to be imported. */
+  sharedSaved: Place[];
 }
 
 function areaOrigin(atlas: Atlas, areaId: string | null): Origin {
@@ -38,6 +41,33 @@ function nearestMinutes(value: number): number {
     }
   }
   return best;
+}
+
+function parseTab(value: string | null): TabId | null {
+  return value === 'places' || value === 'trails' || value === 'saved' ? value : null;
+}
+
+/**
+ * A shared saved list travels as comma-separated place ids in `?saved=`.
+ * Unknown ids (from an older atlas build) are ignored, and duplicates keep
+ * their first position.
+ */
+function parseSharedSaved(
+  value: string | null,
+  atlas: Atlas,
+  places: Map<string, Place>,
+): Place[] {
+  if (!value) return [];
+  const seen = new Set<string>();
+  const out: Place[] = [];
+  for (const raw of value.split(',')) {
+    const id = raw.trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    const place = resolvePlaceId(atlas, places, id);
+    if (place) out.push(place);
+  }
+  return out;
 }
 
 export function readInitialState(atlas: Atlas, places: Map<string, Place>): InitialState {
@@ -85,7 +115,14 @@ export function readInitialState(atlas: Atlas, places: Map<string, Place>): Init
     ? atlas.trails.find((candidate) => candidate.id === trailParam) || null
     : null;
 
-  return { origin, moods, mode, minutes, query, place, trail };
+  const sharedSaved = parseSharedSaved(params.get('saved'), atlas, places);
+  const tab: TabId = sharedSaved.length
+    ? 'saved'
+    : trail
+      ? 'trails'
+      : parseTab(params.get('tab')) || 'places';
+
+  return { origin, moods, mode, minutes, query, place, trail, tab, sharedSaved };
 }
 
 interface UrlState {
@@ -96,6 +133,9 @@ interface UrlState {
   query: string;
   placeId: string | null;
   trailId: string | null;
+  tab: TabId;
+  /** When set, these ids ride along in `?saved=` as an importable list. */
+  sharedIds?: string[] | null;
 }
 
 export function buildQueryString(state: UrlState): string {
@@ -114,8 +154,10 @@ export function buildQueryString(state: UrlState): string {
   if (state.mode !== DEFAULT_MODE) params.set('mode', state.mode);
   if (state.minutes !== DEFAULT_MINUTES) params.set('time', String(state.minutes));
   if (state.query.trim()) params.set('q', state.query.trim());
+  if (state.tab !== 'places') params.set('tab', state.tab);
   if (state.placeId) params.set('place', state.placeId);
   if (state.trailId) params.set('trail', state.trailId);
+  if (state.sharedIds?.length) params.set('saved', state.sharedIds.join(','));
   return params.toString();
 }
 

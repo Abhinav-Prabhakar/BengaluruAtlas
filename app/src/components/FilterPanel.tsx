@@ -102,8 +102,7 @@ function TrafficCard({ state }: { state: TrafficState | null }) {
   return (
     <div className="traffic-card">
       <div className="traffic-head">
-        <span className={`traffic-live ${state.isLive ? 'is-live' : ''}`}>
-          <i />
+        <span className="traffic-live">
           {state.isLive ? 'Live traffic' : 'Typical traffic'}
         </span>
         <span className="traffic-moment">{trafficMoment(state)}</span>

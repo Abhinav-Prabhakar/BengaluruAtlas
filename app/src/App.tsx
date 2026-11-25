@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronDown,
   ChevronUp,
   Crosshair,
+  RefreshCw,
   RotateCcw,
   Shuffle,
   SlidersHorizontal,
+  X,
 } from 'lucide-react';
 import {
   DEFAULT_MINUTES,
@@ -14,11 +16,14 @@ import {
 } from './lib/catalog';
 import {
   distanceKm,
+  detourFrom,
+  detourMinutes,
   estimateMinutes,
   formatCount,
   nearestArea,
   reachKm,
 } from './lib/geo';
+import { arrivalStatus, istClock } from './lib/hours';
 import { MOODS, MOOD_BY_ID } from './lib/moods';
 import {
   buildPlaceIndex,
@@ -26,12 +31,14 @@ import {
   placeHaystack,
   resolvePlaceId,
 } from './lib/places';
+import { sortRows } from './lib/rank';
 import { cachedRoute, loadOneRoute, loadRouteTable } from './lib/routing';
 import {
   congestionAt,
   loadTraffic,
   type TrafficState,
 } from './lib/traffic';
+import { isRainCode, loadWeather, sunsetMinute } from './lib/weather';
 import {
   readThemePref,
   readSaved,
@@ -40,6 +47,11 @@ import {
   writeVisited,
   writeThemePref,
 } from './lib/storage';
+import {
+  applyPwaUpdate,
+  onPwaUpdate,
+  useInstallPrompt,
+} from './lib/pwa';
 import type {
   Atlas,
   Origin,
@@ -50,6 +62,7 @@ import type {
   ThemePref,
   Trail,
   TravelMode,
+  WeatherNow,
 } from './lib/types';
 import { buildQueryString, buildShareUrl, readInitialState } from './lib/url';
 import About from './components/About';
@@ -60,6 +73,7 @@ import MapCanvas from './components/MapCanvas';
 import Modal from './components/Modal';
 import PlacesPanel from './components/PlacesPanel';
 import SavedPanel from './components/SavedPanel';
+import SharedList from './components/SharedList';
 import TabBar from './components/TabBar';
 import Topbar from './components/Topbar';
 import TrailsPanel from './components/TrailsPanel';
@@ -95,6 +109,16 @@ async function copyText(text: string): Promise<boolean> {
       return false;
     }
   }
+}
+
+function whenIdle(callback: () => void): void {
+  const idle = (
+    window as Window & {
+      requestIdleCallback?: (run: () => void, options?: { timeout: number }) => number;
+    }
+  ).requestIdleCallback;
+  if (idle) idle(callback, { timeout: 3500 });
+  else window.setTimeout(callback, 2200);
 }
 
 function LoadingScreen() {
@@ -177,9 +201,15 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
   const [minutes, setMinutes] = useState(initial.minutes);
   const [query, setQuery] = useState(initial.query);
   const [traffic, setTraffic] = useState<TrafficState | null>(null);
-  const [tab, setTab] = useState<TabId>(initial.trail ? 'trails' : 'places');
+  const [weather, setWeather] = useState<WeatherNow | null>(null);
+  const [tab, setTab] = useState<TabId>(initial.tab);
   const [selected, setSelected] = useState<Place | null>(initial.place);
   const [trailId, setTrailId] = useState<string | null>(initial.trail?.id ?? null);
+  const [incoming, setIncoming] = useState<Place[] | null>(
+    initial.sharedSaved.length ? initial.sharedSaved : null,
+  );
+  const [updateReady, setUpdateReady] = useState(false);
+  const { canInstall, isStandalone, promptInstall } = useInstallPrompt();
   const [themePref, setThemePref] = useState<ThemePref>(
     () => readThemePref() ?? 'system',
   );
@@ -196,6 +226,23 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
   const [visibleCount, setVisibleCount] = useState(48);
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [routeTick, setRouteTick] = useState(0);
+  const [rankRevision, setRankRevision] = useState(0);
+  const rankTimer = useRef<number | null>(null);
+
+  const scheduleRank = useCallback(() => {
+    if (rankTimer.current != null) window.clearTimeout(rankTimer.current);
+    rankTimer.current = window.setTimeout(() => {
+      rankTimer.current = null;
+      setRankRevision((value) => value + 1);
+    }, 520);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (rankTimer.current != null) window.clearTimeout(rankTimer.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     let alive = true;
@@ -211,6 +258,30 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
       window.clearInterval(timer);
     };
   }, []);
+
+  useEffect(() => {
+    let alive = true;
+    const refresh = () => {
+      loadWeather().then((value) => {
+        if (alive) setWeather(value);
+      });
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 11 * 60 * 1000);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const raining = Boolean(
+    weather && (isRainCode(weather.code) || weather.rainChance >= 55),
+  );
+  const golden = Boolean(weather?.golden && !raining);
+  const sunset = weather ? sunsetMinute(weather) : null;
+  const nowMinutes = istClock().minutes;
+
+  useEffect(() => onPwaUpdate(setUpdateReady), []);
 
   const baseRadiusKm = useMemo(() => reachKm(mode, minutes), [mode, minutes]);
   const originCongestion = useMemo(
@@ -246,16 +317,24 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
     >;
     const needle = query.trim().toLowerCase();
     const inRange: ResultRow[] = [];
+    const now = new Date();
+    const clock = istClock(now);
 
     for (const place of atlas.places) {
       const km = distanceKm(origin, place);
       if (km > radiusKm) continue;
       if (needle && !(haystacks.get(place.id) || '').includes(needle)) continue;
       for (const id of moodIndex.get(place.id) || []) nextMoods[id] += 1;
+      const factor =
+        (mode === 'auto' || mode === 'cab') && traffic
+          ? congestionAt(place, traffic).factor
+          : 1;
+      const minutes = Math.max(1, Math.round(estimateMinutes(km, mode) * factor));
       inRange.push({
         place,
         distanceKm: km,
-        minutes: estimateMinutes(km, mode),
+        minutes,
+        arrival: arrivalStatus(place.hours, minutes, now),
       });
     }
 
@@ -267,21 +346,12 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
           })
         : inRange;
 
-    const tierRank = (place: Place) =>
-      place.tier === 'editor' ? 3 : place.tier === 'wiki' ? 2 : place.tier === 'atlas' ? 1 : 0;
-    filtered.sort(
-      (a, b) =>
-        tierRank(b.place) - tierRank(a.place) ||
-        b.place.score - a.place.score ||
-        a.distanceKm - b.distanceKm,
-    );
-
     return {
-      rows: filtered,
+      rows: sortRows(filtered, { raining, golden, clock, sunsetMinute: sunset }),
       moodCounts: nextMoods,
       totalWithin: inRange.length,
     };
-  }, [atlas.places, origin, radiusKm, mode, query, moods, haystacks, moodIndex]);
+  }, [atlas.places, origin, radiusKm, mode, query, moods, haystacks, moodIndex, traffic, raining, golden, sunset]);
 
   // Ask OSRM for real road times on the first screenful, then again whenever
   // the origin or travel mode changes. The table call costs one request.
@@ -300,7 +370,35 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
         mode,
         controller.signal,
       ).then((added) => {
-        if (added > 0) setRouteTick((value) => value + 1);
+        if (controller.signal.aborted) return;
+        if (added > 0) {
+          setRouteTick((value) => value + 1);
+          scheduleRank();
+        }
+        if (added <= 0) return;
+
+        // Warm the next screenful and the other common mode while the browser
+        // is quiet. These never reorder the list; they only make the next
+        // click instant.
+        whenIdle(() => {
+          if (controller.signal.aborted) return;
+          const nextMode: TravelMode =
+            mode === 'walk' || mode === 'bike' ? 'auto' : 'walk';
+          const nextScreen = rows.slice(90, 138).map((row) => row.place);
+          const alternate = rows.slice(0, 30).map((row) => row.place);
+          void (async () => {
+            let changed = 0;
+            if (nextScreen.length) {
+              changed += await loadRouteTable(origin, nextScreen, mode, controller.signal);
+            }
+            if (!controller.signal.aborted && alternate.length) {
+              changed += await loadRouteTable(origin, alternate, nextMode, controller.signal);
+            }
+            if (changed > 0 && !controller.signal.aborted) {
+              setRouteTick((value) => value + 1);
+            }
+          })();
+        });
       });
     }, 650);
     return () => {
@@ -309,7 +407,7 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
     };
     // rows is stable between filter changes; candidateKey captures its head.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [origin.lat, origin.lon, mode, candidateKey]);
+  }, [origin.lat, origin.lon, mode, candidateKey, scheduleRank]);
 
   // Deep links and map picks may not be in the first table; route them alone.
   useEffect(() => {
@@ -328,100 +426,141 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
         const congestion = traffic ? congestionAt(row.place, traffic) : null;
         const factor =
           mode === 'auto' || mode === 'cab' ? congestion?.factor ?? 1 : 1;
-        if (leg) {
-          return {
-            ...row,
-            distanceKm: leg.km || row.distanceKm,
-            minutes: Math.max(1, Math.round(leg.minutes * factor)),
-            live: true,
-            traffic: congestion?.label,
-            kmph: congestion?.kmph,
-            freeKmph: congestion?.corridor?.freeKmph,
-          };
-        }
+        const minutes = leg
+          ? Math.max(1, Math.round(leg.minutes * factor))
+          : row.minutes;
         return {
           ...row,
-          minutes: Math.max(1, Math.round(row.minutes * factor)),
-          live: false,
+          distanceKm: leg?.km || row.distanceKm,
+          minutes,
+          live: Boolean(leg),
           traffic: congestion?.label,
           kmph: congestion?.kmph,
           freeKmph: congestion?.corridor?.freeKmph,
+          arrival: arrivalStatus(row.place.hours, minutes),
         };
       }),
     [rows, origin, mode, traffic, routeTick],
   );
 
+  const scopeKey = `${origin.lat.toFixed(4)},${origin.lon.toFixed(4)}|${mode}|${minutes}|${moods.join(',')}|${query.trim().toLowerCase()}|${raining}|${golden}|${sunset ?? ''}`;
+  const orderRef = useRef<string[]>([]);
+  const orderScope = useRef('');
+  const orderRevision = useRef(-1);
+
+  const rankedRows = useMemo(() => {
+    const order = orderRef.current;
+    const orderSet = new Set(order);
+    const setChanged =
+      order.length !== travelAdjusted.length ||
+      travelAdjusted.some((row) => !orderSet.has(row.place.id));
+    const shouldSort =
+      setChanged || orderScope.current !== scopeKey || orderRevision.current !== rankRevision;
+
+    if (shouldSort) {
+      const sorted = sortRows(travelAdjusted, {
+        raining,
+        golden,
+        clock: istClock(),
+        sunsetMinute: sunset,
+      });
+      orderRef.current = sorted.map((row) => row.place.id);
+      orderScope.current = scopeKey;
+      orderRevision.current = rankRevision;
+    }
+
+    const byId = new Map(travelAdjusted.map((row) => [row.place.id, row]));
+    return orderRef.current.flatMap((id) => {
+      const row = byId.get(id);
+      return row ? [row] : [];
+    });
+  }, [travelAdjusted, scopeKey, rankRevision, raining, golden, sunset]);
+
   const visibleRows = useMemo(
-    () => travelAdjusted.slice(0, visibleCount),
-    [travelAdjusted, visibleCount],
+    () => rankedRows.slice(0, visibleCount),
+    [rankedRows, visibleCount],
   );
 
-  const selectedRow = useMemo<ResultRow | null>(() => {
-    if (!selected) return null;
-    const km = distanceKm(origin, selected);
-    const leg = cachedRoute(origin, selected.id, mode);
-    const congestion = traffic ? congestionAt(selected, traffic) : null;
-    const factor =
-      mode === 'auto' || mode === 'cab' ? congestion?.factor ?? 1 : 1;
-    if (leg) {
+  const rowForPlace = useCallback(
+    (place: Place): ResultRow => {
+      const leg = cachedRoute(origin, place.id, mode);
+      const congestion = traffic ? congestionAt(place, traffic) : null;
+      const factor =
+        mode === 'auto' || mode === 'cab' ? congestion?.factor ?? 1 : 1;
+      const plainKm = distanceKm(origin, place);
+      const km = leg?.km || plainKm;
+      const minutes = leg
+        ? Math.max(1, Math.round(leg.minutes * factor))
+        : Math.max(1, Math.round(estimateMinutes(km, mode) * factor));
       return {
-        place: selected,
-        distanceKm: leg.km || km,
-        minutes: Math.max(1, Math.round(leg.minutes * factor)),
-        live: true,
+        place,
+        distanceKm: km,
+        minutes,
+        live: Boolean(leg),
         traffic: congestion?.label,
         kmph: congestion?.kmph,
         freeKmph: congestion?.corridor?.freeKmph,
+        arrival: arrivalStatus(place.hours, minutes),
       };
-    }
-    return {
-      place: selected,
-      distanceKm: km,
-      minutes: Math.max(1, Math.round(estimateMinutes(km, mode) * factor)),
-      live: false,
-      traffic: congestion?.label,
-      kmph: congestion?.kmph,
-      freeKmph: congestion?.corridor?.freeKmph,
-    };
-  }, [selected, origin, mode, traffic, routeTick]);
+    },
+    [origin, mode, traffic],
+  );
 
-  const savedRows = useMemo(() => {
-    const out: ResultRow[] = [];
-    for (const id of saved) {
-      const place = resolvePlaceId(atlas, places, id);
-      if (!place) continue;
-      const km = distanceKm(origin, place);
-      const factor =
-        (mode === 'auto' || mode === 'cab') && traffic
-          ? congestionAt(place, traffic).factor
-          : 1;
-      out.push({
-        place,
-        distanceKm: km,
-        minutes: Math.max(1, Math.round(estimateMinutes(km, mode) * factor)),
-      });
-    }
-    return out;
-  }, [saved, atlas, places, origin, mode, traffic]);
+  const selectedRow = useMemo<ResultRow | null>(
+    () => (selected ? rowForPlace(selected) : null),
+    [selected, rowForPlace, routeTick],
+  );
 
-  const visitedRows = useMemo(() => {
-    const out: ResultRow[] = [];
-    for (const id of visited) {
-      const place = resolvePlaceId(atlas, places, id);
-      if (!place) continue;
-      const km = distanceKm(origin, place);
-      const factor =
-        (mode === 'auto' || mode === 'cab') && traffic
-          ? congestionAt(place, traffic).factor
-          : 1;
-      out.push({
-        place,
-        distanceKm: km,
-        minutes: Math.max(1, Math.round(estimateMinutes(km, mode) * factor)),
-      });
-    }
-    return out;
-  }, [visited, atlas, places, origin, mode, traffic]);
+  const savedRows = useMemo(
+    () =>
+      [...saved].flatMap((id) => {
+        const place = resolvePlaceId(atlas, places, id);
+        return place ? [rowForPlace(place)] : [];
+      }),
+    [saved, atlas, places, rowForPlace, routeTick],
+  );
+
+  const visitedRows = useMemo(
+    () =>
+      [...visited].flatMap((id) => {
+        const place = resolvePlaceId(atlas, places, id);
+        return place ? [rowForPlace(place)] : [];
+      }),
+    [visited, atlas, places, rowForPlace, routeTick],
+  );
+
+  // Fetch road times for saved places when that tab is opened, so the list
+  // uses the same honest times as the main results instead of a guess.
+  useEffect(() => {
+    if (tab !== 'saved') return;
+    const placesToRoute = [...savedRows, ...visitedRows].map((row) => row.place);
+    if (!placesToRoute.length) return;
+    const controller = new AbortController();
+    loadRouteTable(origin, placesToRoute, mode, controller.signal).then((added) => {
+      if (added > 0 && !controller.signal.aborted) {
+        setRouteTick((value) => value + 1);
+      }
+    });
+    return () => controller.abort();
+  }, [tab, origin, mode, savedRows, visitedRows]);
+
+  // A quiet detour line in the place panel. This deliberately never touches
+  // the order of any list; it only points out saved places that cost little.
+  const onTheWay = useMemo(() => {
+    if (!selected || savedRows.length === 0) return [];
+    return savedRows
+      .filter((row) => row.place.id !== selected.id)
+      .flatMap((row) => {
+        const detour = detourFrom(origin, selected, row.place);
+        if (detour.fraction < 0.08 || detour.fraction > 0.92) return [];
+        if (detour.offKm > 1.6) return [];
+        const extraMinutes = detourMinutes(detour.extraKm, mode);
+        if (extraMinutes > 9) return [];
+        return [{ place: row.place, extraMinutes: Math.max(1, extraMinutes) }];
+      })
+      .sort((a, b) => a.extraMinutes - b.extraMinutes)
+      .slice(0, 2);
+  }, [selected, savedRows, origin, mode]);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
@@ -479,12 +618,14 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
       mode,
       minutes,
       query,
+      tab,
       placeId: selected?.id ?? null,
       trailId,
+      sharedIds: incoming?.map((place) => place.id) ?? null,
     });
     const next = `${window.location.pathname}${queryString ? `?${queryString}` : ''}`;
     window.history.replaceState(null, '', next);
-  }, [origin, moods, mode, minutes, query, selected, trailId]);
+  }, [origin, moods, mode, minutes, query, tab, selected, trailId, incoming]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -511,8 +652,10 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
       mode,
       minutes,
       query,
+      tab,
       placeId: selected?.id ?? null,
       trailId,
+      sharedIds: incoming?.map((place) => place.id) ?? null,
     });
 
   const handleShare = async () => {
@@ -521,6 +664,50 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
       copied
         ? 'Link copied — filters, place and all.'
         : 'Could not copy the link. Try the address bar.',
+    );
+  };
+
+  const handleInstall = async () => {
+    const accepted = await promptInstall();
+    if (accepted) setToast('Bengaluru Atlas is installing.');
+  };
+
+  const handleShareList = async () => {
+    const ids = savedRows.map((row) => row.place.id);
+    if (!ids.length) {
+      setToast('Save a place first — then share the list.');
+      return;
+    }
+    const url = buildShareUrl({
+      origin,
+      moods,
+      mode,
+      minutes,
+      query,
+      tab: 'saved',
+      placeId: null,
+      trailId: null,
+      sharedIds: ids,
+    });
+    const title = 'Bengaluru Atlas — a list for you';
+    const text = `${ids.length} ${ids.length === 1 ? 'place' : 'places'} from my Bengaluru Atlas field notes.`;
+
+    if (isMobile && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title, text, url });
+        setToast('List shared.');
+        return;
+      } catch (reason) {
+        if (reason instanceof DOMException && reason.name === 'AbortError') return;
+        /* Fall through to copying when the share sheet is unavailable. */
+      }
+    }
+
+    const copied = await copyText(url);
+    setToast(
+      copied
+        ? `List link copied — ${ids.length} ${ids.length === 1 ? 'place' : 'places'} travel inside it.`
+        : 'Could not copy the list link. Try the address bar.',
     );
   };
 
@@ -667,6 +854,29 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
     setToast(wasVisited ? 'Visited mark removed.' : 'Marked as visited.');
   };
 
+  const handleSaveIncoming = () => {
+    if (!incoming) return;
+    const ids = incoming.map((place) => place.id);
+    const fresh = ids.filter((id) => !saved.has(id)).length;
+    setSaved((current) => {
+      const next = new Set(current);
+      for (const id of ids) next.add(id);
+      return next;
+    });
+    setIncoming(null);
+    setTab('saved');
+    setSheetExpanded(true);
+    setToast(
+      fresh
+        ? `Saved ${fresh} ${fresh === 1 ? 'place' : 'places'} from the shared list.`
+        : 'Those places are already in your field notes.',
+    );
+  };
+
+  const handleDismissIncoming = () => {
+    setIncoming(null);
+  };
+
   const handleSurprise = () => {
     const unvisited = rows.filter(
       (row) => !visited.has(row.place.id) && row.place.id !== selected?.id,
@@ -746,7 +956,9 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
       selectedId={selected?.id ?? null}
       moodsActive={moods.length > 0}
       canWiden={minutes < TIME_STOPS[TIME_STOPS.length - 1]}
-      liveTimes={travelAdjusted.slice(0, visibleCount).some((row) => row.live)}
+      liveTimes={rankedRows.slice(0, visibleCount).some((row) => row.live)}
+      rainy={raining}
+      golden={golden}
       onQuery={setQuery}
       onSelect={(row) => setSelected(row.place)}
       onToggleSave={handleToggleSave}
@@ -774,6 +986,8 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
       origin={origin}
       theme={theme}
       visited={visited}
+      sunsetMinute={sunset}
+      nowMinute={nowMinutes}
       onSelectTrail={handleSelectTrail}
       onClearTrail={handleClearTrail}
       onSelectStop={(nextTrail, _stop, index) => handleSelectStop(nextTrail, index)}
@@ -790,6 +1004,7 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
       onToggleSave={(row) => handleToggleSave(row.place)}
       onGoPlaces={() => handleTab('places')}
       onSurprise={handleSurprise}
+      onShareList={handleShareList}
     />
   );
 
@@ -908,6 +1123,10 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
               traffic={selectedRow.traffic}
               kmph={selectedRow.kmph}
               freeKmph={selectedRow.freeKmph}
+              arrival={selectedRow.arrival}
+              sunsetMinute={raining ? null : sunset}
+              nowMinute={nowMinutes}
+              onTheWay={onTheWay}
               saved={saved.has(selected.id)}
               visited={visited.has(selected.id)}
               onClose={() => setSelected(null)}
@@ -1001,9 +1220,41 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
         <About
           atlas={atlas}
           themePref={themePref}
+          canInstall={canInstall && !isStandalone}
+          isStandalone={isStandalone}
           onThemePref={setThemePref}
+          onInstall={handleInstall}
           onClose={() => setAboutOpen(false)}
         />
+      )}
+
+      {incoming && (
+        <SharedList
+          places={incoming}
+          saved={saved}
+          theme={theme}
+          onSaveAll={handleSaveIncoming}
+          onClose={handleDismissIncoming}
+        />
+      )}
+
+      {updateReady && (
+        <div className="pwa-banner" role="status">
+          <span className="pwa-banner-dot" aria-hidden="true" />
+          <span>A newer atlas is ready.</span>
+          <button type="button" onClick={applyPwaUpdate}>
+            <RefreshCw size={12} />
+            Update
+          </button>
+          <button
+            type="button"
+            className="pwa-banner-close"
+            onClick={() => setUpdateReady(false)}
+            aria-label="Dismiss the update notice"
+          >
+            <X size={14} />
+          </button>
+        </div>
       )}
 
       {toast && (

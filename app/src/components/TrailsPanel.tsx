@@ -14,11 +14,14 @@ import {
   Route,
   Search,
   ShoppingBag,
+  Sunset,
   Utensils,
   X,
 } from 'lucide-react';
 import { CATEGORY_BY_ID, categoryColor } from '../lib/catalog';
 import { distanceKm } from '../lib/geo';
+import { formatClockMinutes } from '../lib/hours';
+import { durationMinutes } from '../lib/time';
 import type { Origin, Theme, Trail, TrailStop } from '../lib/types';
 
 interface TrailsPanelProps {
@@ -27,6 +30,8 @@ interface TrailsPanelProps {
   origin: Origin;
   theme: Theme;
   visited: Set<string>;
+  sunsetMinute?: number | null;
+  nowMinute?: number;
   onSelectTrail: (trail: Trail) => void;
   onClearTrail: () => void;
   onSelectStop: (trail: Trail, stop: TrailStop, index: number) => void;
@@ -69,6 +74,39 @@ function kindLabel(trail: Trail): string {
 function parseDistance(value: string): number {
   const match = /([\d.]+)/.exec(value);
   return match ? Number(match[1]) : 0;
+}
+
+/**
+ * A one-line daylight budget for a trail. It only appears when the answer is
+ * close enough to matter: either the start-by time is within four hours, or a
+ * shorter trail has already passed its window.
+ */
+function daylightNote(
+  trail: Trail,
+  sunset: number | null | undefined,
+  now: number | undefined,
+): { text: string; late: boolean } | null {
+  if (trail.kind === 'night' || sunset == null || now == null) return null;
+  const duration = durationMinutes(trail.duration);
+  if (!duration || now >= sunset) return null;
+
+  const latestStart = sunset - duration - 20;
+  if (now >= latestStart) {
+    if (duration > 5 * 60) return null;
+    return {
+      text: `Too late to finish in daylight today — sunset is at ${formatClockMinutes(sunset)}.`,
+      late: true,
+    };
+  }
+
+  if (latestStart - now <= 4 * 60) {
+    return {
+      text: `Start by ${formatClockMinutes(latestStart)} to finish before sunset at ${formatClockMinutes(sunset)}.`,
+      late: false,
+    };
+  }
+
+  return null;
 }
 
 function TrailThumb({ trail }: { trail: Trail }) {
@@ -157,6 +195,8 @@ export default function TrailsPanel({
   origin,
   theme,
   visited,
+  sunsetMinute,
+  nowMinute,
   onSelectTrail,
   onClearTrail,
   onSelectStop,
@@ -244,6 +284,7 @@ export default function TrailsPanel({
     const trail = activeTrail;
     const Icon = kindMeta(trail).icon;
     const done = trail.stops.filter((stop) => stop.id && visited.has(stop.id)).length;
+    const daylight = daylightNote(trail, sunsetMinute, nowMinute);
     return (
       <div className="trails-panel is-detail" style={{ '--trail': trail.color } as CSSProperties}>
         <button type="button" className="back-button" onClick={onClearTrail}>
@@ -309,6 +350,13 @@ export default function TrailsPanel({
             <dd>{trail.stops.length}</dd>
           </div>
         </dl>
+
+        {daylight && (
+          <p className={`trail-daylight ${daylight.late ? 'is-late' : ''}`}>
+            <Sunset size={12} />
+            {daylight.text}
+          </p>
+        )}
 
         {done > 0 && (
           <p className="trail-progress">

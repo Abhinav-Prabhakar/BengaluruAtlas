@@ -107,11 +107,11 @@
 
 <br/>
 
-> **The honest bit.** The first cards use real road routes from OSRM, adjusted by live readings from 13 instrumented Bengaluru corridors. The rest are modelled from the same speeds, with a baked 24-hour profile when GitHub is unreachable. Traffic updates every ten minutes; every listing opens Google Maps for turn-by-turn.
+> **The honest bit.** The first cards use real road routes from OSRM, adjusted by live readings from 13 instrumented Bengaluru corridors. The rest are modelled from the same speeds, with a baked 24-hour profile when GitHub is unreachable. The list is ordered by travel time, with a small head start for editorial picks and the hour of the day; opening hours are checked against the moment you would arrive, outdoor places settle lower when rain is likely and rise in the dry hour before sunset. Road times are cached locally, and after a rate limit the atlas keeps using the last real routes instead of retrying. Traffic updates every ten minutes; every listing opens Google Maps for turn-by-turn.
 
 <div align="center">
 
-<strong>Saved &amp; visited</strong> stays in your browser · <strong>shareable links</strong> remember the whole view · <strong>37 moods</strong> · <strong>206 trails</strong> · <strong>live traffic</strong> · <strong>follows your device theme</strong> · <strong>installable</strong> · <strong>no accounts</strong> · <strong>no tracking</strong> · <strong>no keys</strong>
+<strong>Saved &amp; visited</strong> stays in your browser · <strong>saved lists share as plain links</strong> · <strong>shareable links</strong> remember the whole view · <strong>37 moods</strong> · <strong>206 trails</strong> · <strong>live traffic</strong> · <strong>follows your device theme</strong> · <strong>installable PWA with offline shell</strong> · <strong>no accounts</strong> · <strong>no tracking</strong> · <strong>no keys</strong>
 
 </div>
 

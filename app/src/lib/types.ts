@@ -134,6 +134,8 @@ export interface ResultRow {
   kmph?: number;
   /** Free-flow speed of the nearest instrumented corridor. */
   freeKmph?: number;
+  /** Opening status at the moment this row says you would arrive. */
+  arrival?: ArrivalInfo | null;
 }
 
 export interface WeatherNow {
@@ -143,4 +145,17 @@ export interface WeatherNow {
   sunset: string;
   golden: boolean;
   label: string;
+}
+
+export interface ArrivalInfo {
+  state: 'open' | 'closed' | 'unknown';
+  /** Minutes until closing; null when closed or unknown. */
+  closesIn: number | null;
+  /** Clock minute when it closes; may exceed 1440 for tomorrow. */
+  closesAt: number | null;
+  /** Clock minute when it next opens; may exceed 1440 for tomorrow. */
+  opensAt: number | null;
+  closingSoon: boolean;
+  /** Arrival time, minutes since midnight of the arrival day. */
+  arrivalAt: number;
 }

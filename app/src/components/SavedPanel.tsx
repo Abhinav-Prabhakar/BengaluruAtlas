@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bookmark, Check, Shuffle } from 'lucide-react';
+import { Bookmark, Check, Share2, Shuffle } from 'lucide-react';
 import type { ResultRow, Theme } from '../lib/types';
 import PlaceCard from './PlaceCard';
 
@@ -12,6 +12,7 @@ interface SavedPanelProps {
   onToggleSave: (row: ResultRow) => void;
   onGoPlaces: () => void;
   onSurprise: () => void;
+  onShareList: () => void;
 }
 
 type SavedView = 'saved' | 'visited';
@@ -25,6 +26,7 @@ export default function SavedPanel({
   onToggleSave,
   onGoPlaces,
   onSurprise,
+  onShareList,
 }: SavedPanelProps) {
   const [view, setView] = useState<SavedView>('saved');
   const rows = view === 'saved' ? savedRows : visitedRows;
@@ -41,7 +43,8 @@ export default function SavedPanel({
           <h3>A little list of your own.</h3>
           <p>
             Tap the bookmark on any place to keep it here. Everything stays in
-            this browser — no account, no server, no tracking.
+            this browser — and you can pass the whole list to a friend as a
+            link, no account needed.
           </p>
           <div className="empty-actions">
             <button type="button" className="button button-primary" onClick={onGoPlaces}>
@@ -64,26 +67,43 @@ export default function SavedPanel({
         <h3>Kept for later.</h3>
       </div>
 
-      <div className="saved-tabs" role="tablist" aria-label="Saved places">
+      <div className="saved-toolbar">
+        <div className="saved-tabs" role="tablist" aria-label="Saved places">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={view === 'saved'}
+            className={view === 'saved' ? 'is-active' : ''}
+            onClick={() => setView('saved')}
+          >
+            <Bookmark size={13} />
+            Saved <span>{savedRows.length}</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={view === 'visited'}
+            className={view === 'visited' ? 'is-active' : ''}
+            onClick={() => setView('visited')}
+          >
+            <Check size={13} />
+            Been there <span>{visitedRows.length}</span>
+          </button>
+        </div>
         <button
           type="button"
-          role="tab"
-          aria-selected={view === 'saved'}
-          className={view === 'saved' ? 'is-active' : ''}
-          onClick={() => setView('saved')}
+          className="saved-share"
+          onClick={onShareList}
+          disabled={savedRows.length === 0}
+          aria-label="Share the saved list as a link"
+          title={
+            savedRows.length
+              ? 'Copy a link that carries this whole list'
+              : 'Save a place before sharing the list'
+          }
         >
-          <Bookmark size={13} />
-          Saved <span>{savedRows.length}</span>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={view === 'visited'}
-          className={view === 'visited' ? 'is-active' : ''}
-          onClick={() => setView('visited')}
-        >
-          <Check size={13} />
-          Been there <span>{visitedRows.length}</span>
+          <Share2 size={13} />
+          <span>Share</span>
         </button>
       </div>
 

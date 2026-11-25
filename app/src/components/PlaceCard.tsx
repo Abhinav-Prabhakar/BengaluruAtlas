@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from 'react';
 import { Bookmark, Check, Star } from 'lucide-react';
 import { CATEGORY_BY_ID, categoryColor } from '../lib/catalog';
 import { formatDistance } from '../lib/geo';
+import { arrivalNote, formatArrivalClock } from '../lib/hours';
 import { describePlace } from '../lib/places';
 import type { Place, ResultRow, Theme } from '../lib/types';
 import CoverArt, { coverSeed } from './CoverArt';
@@ -75,9 +76,24 @@ export default function PlaceCard({
   const tags = (place.tags || [])
     .filter((tag) => tag.toLowerCase() !== meta.label.toLowerCase())
     .slice(0, 3);
+  const hoursNote = arrivalNote(row.arrival ?? null);
+  const arrivalTitle =
+    row.arrival?.state === 'closed'
+      ? `Closed when you arrive${
+          row.arrival.opensAt != null
+            ? `; opens ${formatArrivalClock(row.arrival.opensAt)}`
+            : ''
+        }`
+      : row.arrival?.closingSoon
+        ? `Closes ${formatArrivalClock(row.arrival.closesAt)} — you would arrive just before`
+        : '';
 
   return (
-    <li className={`place-card ${selected ? 'is-selected' : ''}`} style={style}>
+    <li
+      className={`place-card ${selected ? 'is-selected' : ''}`}
+      style={style}
+      data-place-id={place.id}
+    >
       <button
         type="button"
         className="place-card-open"
@@ -113,10 +129,16 @@ export default function PlaceCard({
               <Icon size={11} strokeWidth={2} />
               {meta.label}
             </span>
-            <span className={`place-time ${row.live ? 'is-live' : ''}`}>
-              {row.live && <i className="live-dot" aria-hidden="true" />}≈ {minutes} min
-            </span>
+            <span className="place-time">≈ {minutes} min</span>
             <span className="place-distance">{formatDistance(distanceKm)}</span>
+            {hoursNote && (
+              <span
+                className={`place-hours ${row.arrival?.state === 'closed' ? 'is-closed' : ''}`}
+                title={arrivalTitle}
+              >
+                {hoursNote}
+              </span>
+            )}
             {place.gem && <span className="place-gem">gem</span>}
             {visited && (
               <span className="place-visited">

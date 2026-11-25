@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0E100C" />
+    <meta name="color-scheme" content="dark" />
+    <title>Offline · Bengaluru Atlas</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0d0f0c;
+        --ink: #ede6d6;
+        --ink-2: #bdb6a3;
+        --ink-3: #8e8776;
+        --line: #282d22;
+        --accent: #e27a4e;
+        --paper: #181d14;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100dvh;
+        margin: 0;
+        padding: 24px;
+        background:
+          radial-gradient(circle at 50% 38%, rgba(226, 122, 78, 0.08), transparent 32%),
+          var(--bg);
+        color: var(--ink);
+        font-family: 'Manrope', 'Helvetica Neue', Arial, sans-serif;
+        text-align: center;
+      }
+      main {
+        max-width: 420px;
+      }
+      .mark {
+        display: inline-grid;
+        place-items: center;
+        width: 68px;
+        height: 68px;
+        margin-bottom: 22px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--paper);
+      }
+      .mark svg {
+        width: 40px;
+        height: 40px;
+      }
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--ink-3);
+        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+        font-size: 9px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-family: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+        font-size: clamp(30px, 8vw, 44px);
+        font-weight: 500;
+        letter-spacing: -0.03em;
+        line-height: 1.05;
+      }
+      p {
+        margin: 0;
+        color: var(--ink-2);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 22px;
+        padding: 11px 18px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: #18120e;
+        font-size: 12px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+      .fine {
+        margin-top: 18px;
+        color: var(--ink-3);
+        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+        font-size: 9px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 64 64" role="img" aria-label="Bengaluru Atlas">
+          <circle
+            cx="32"
+            cy="32"
+            r="22"
+            fill="none"
+            stroke="#EFE7D6"
+            stroke-opacity="0.22"
+            stroke-dasharray="1 4"
+          />
+          <path d="M32 7.5 36.1 27.9 56.5 32 36.1 36.1 32 56.5 27.9 36.1 7.5 32 27.9 27.9Z" fill="#EFE7D6" />
+          <circle cx="32" cy="32" r="5.4" fill="#D96C47" />
+        </svg>
+      </span>
+      <p class="eyebrow">The city is cached</p>
+      <h1>You are offline.</h1>
+      <p>
+        The atlas shell and the last city data it loaded are still on this
+        device. Reconnect to pull live traffic, fresh photographs and the rest
+        of Bengaluru.
+      </p>
+      <a href="./">Try the atlas again</a>
+      <p class="fine">Saved places are safe in this browser.</p>
+    </main>
+    <script>
+      window.addEventListener('online', function () {
+        window.location.reload();
+      });
+    </script>
+  </body>
+</html>

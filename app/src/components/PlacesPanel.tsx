@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { ChevronDown, Search, SlidersHorizontal, X } from 'lucide-react';
 import { formatCount } from '../lib/geo';
 import type { ResultRow, Theme } from '../lib/types';
@@ -15,6 +15,8 @@ interface PlacesPanelProps {
   selectedId: string | null;
   moodsActive: boolean;
   liveTimes: boolean;
+  rainy: boolean;
+  golden: boolean;
   canWiden: boolean;
   onQuery: (query: string) => void;
   onSelect: (row: ResultRow) => void;
@@ -23,6 +25,54 @@ interface PlacesPanelProps {
   onClearMoods: () => void;
   onWiden: () => void;
   onOpenFilters: () => void;
+}
+
+/**
+ * Keep the list calm when travel times arrive and the order changes. Cards
+ * glide from their old slot to the new one instead of jumping. A filter that
+ * swaps most of the list is left alone; a reorder that keeps most cards in
+ * play is eased, so a route correction never looks like a flicker.
+ */
+function useReorderMotion() {
+  const listRef = useRef<HTMLUListElement>(null);
+  const positions = useRef(new Map<string, number>());
+
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const cards = Array.from(list.querySelectorAll<HTMLElement>('[data-place-id]'));
+    const next = new Map<string, number>();
+    for (const card of cards) {
+      const id = card.dataset.placeId;
+      if (id) next.set(id, card.offsetTop);
+    }
+
+    const previous = positions.current;
+    const overlap = [...next.keys()].filter((id) => previous.has(id)).length;
+    const familiar =
+      previous.size > 0 && overlap / Math.max(previous.size, next.size) >= 0.5;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (familiar && !reduce) {
+      for (const card of cards) {
+        const id = card.dataset.placeId;
+        if (!id) continue;
+        const before = previous.get(id);
+        const after = next.get(id);
+        if (before == null || after == null) continue;
+        const delta = before - after;
+        if (Math.abs(delta) < 2) continue;
+        card.animate(
+          [{ transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' }],
+          { duration: 360, easing: 'cubic-bezier(0.22, 0.61, 0.36, 1)' },
+        );
+      }
+    }
+
+    positions.current = next;
+  });
+
+  return listRef;
 }
 
 export default function PlacesPanel({
@@ -36,6 +86,8 @@ export default function PlacesPanel({
   selectedId,
   moodsActive,
   liveTimes,
+  rainy,
+  golden,
   canWiden,
   onQuery,
   onSelect,
@@ -46,6 +98,7 @@ export default function PlacesPanel({
   onOpenFilters,
 }: PlacesPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useReorderMotion();
   const hasMore = shown < rows.length;
 
   useEffect(() => {
@@ -112,7 +165,7 @@ export default function PlacesPanel({
             {formatCount(total)} {total === 1 ? 'place' : 'places'}
           </strong>
         </div>
-        <span className="results-hint">picks first</span>
+        <span className="results-hint">time-aware</span>
       </div>
 
       {rows.length === 0 ? (
@@ -148,7 +201,7 @@ export default function PlacesPanel({
         </div>
       ) : (
         <>
-          <ul className="place-list">
+          <ul className="place-list" ref={listRef}>
             {rows.map((row) => (
               <PlaceCard
                 key={row.place.id}
@@ -176,8 +229,11 @@ export default function PlacesPanel({
             )}
             <p className="results-fine">
               {liveTimes
-                ? 'Times on the first cards are routed on real roads and cut by live corridor speeds.'
-                : 'Times are modelled from distance, mode and live corridor speeds.'}
+                ? 'Where a road route was available, times are cut by live corridor speeds; the rest are modelled.'
+                : 'Times are modelled from distance, mode and live corridor speeds.'}{' '}
+              Order is travel time, with editor picks and the hour given a small head start.
+              {golden && ' Golden-hour light is lifting outdoor picks.'}
+              {rainy && ' Outdoor picks sit lower while rain is likely.'}
             </p>
           </div>
         </>

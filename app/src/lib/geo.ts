@@ -62,6 +62,42 @@ export function estimateMinutes(km: number, mode: TravelMode): number {
   return Math.max(1, Math.round(((km * ROAD_FACTOR) / speed) * 60 + overhead));
 }
 
+/**
+ * How far off the direct line a place sits, and how much extra distance it
+ * adds. The projection is planar, which is plenty for a few kilometres.
+ */
+export function detourFrom(
+  origin: LatLon,
+  destination: LatLon,
+  via: LatLon,
+): { extraKm: number; offKm: number; fraction: number } {
+  const midLat = ((origin.lat + destination.lat) / 2) * (Math.PI / 180);
+  const lonScale = 111.32 * Math.cos(midLat);
+  const latScale = 110.57;
+  const bx = (destination.lon - origin.lon) * lonScale;
+  const by = (destination.lat - origin.lat) * latScale;
+  const px = (via.lon - origin.lon) * lonScale;
+  const py = (via.lat - origin.lat) * latScale;
+  const lengthSq = bx * bx + by * by;
+  const fraction = lengthSq
+    ? Math.max(0, Math.min(1, (px * bx + py * by) / lengthSq))
+    : 0;
+  const offKm = Math.hypot(px - fraction * bx, py - fraction * by);
+  const directKm = Math.hypot(bx, by);
+  const viaKm = Math.hypot(px, py) + Math.hypot(px - bx, py - by);
+  return {
+    extraKm: Math.max(0, viaKm - directKm),
+    offKm,
+    fraction,
+  };
+}
+
+/** Extra travel time for a detour, without adding the mode's fixed overhead twice. */
+export function detourMinutes(extraKm: number, mode: TravelMode): number {
+  const { speed } = MODE_BY_ID[mode];
+  return Math.max(0, Math.round(((extraKm * ROAD_FACTOR) / speed) * 60));
+}
+
 export function circlePolygon(
   center: LatLon,
   radiusKm: number,

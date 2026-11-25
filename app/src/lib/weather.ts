@@ -95,7 +95,27 @@ export function formatClock(value: string): string {
   return `${hour}:${minute} ${suffix}`;
 }
 
+/** Sunset as minutes since midnight in Bengaluru, or null if unavailable. */
+export function sunsetMinute(weather: WeatherNow): number | null {
+  const minutes = minutesFromClock(weather.sunset);
+  return minutes > 0 ? minutes : null;
+}
+
+let pending: Promise<WeatherNow | null> | null = null;
+
+export function isRainCode(code: number): boolean {
+  return (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95;
+}
+
 export async function loadWeather(): Promise<WeatherNow | null> {
+  if (pending) return pending;
+  pending = fetchWeather().finally(() => {
+    pending = null;
+  });
+  return pending;
+}
+
+async function fetchWeather(): Promise<WeatherNow | null> {
   const cached = readCache();
   if (cached) return cached;
 

@@ -1,16 +1,37 @@
-import { ExternalLink, Github, Heart, MapPinned, Monitor, Moon, Sun } from 'lucide-react';
+import {
+  Download,
+  ExternalLink,
+  Github,
+  Heart,
+  MapPinned,
+  Monitor,
+  Moon,
+  Sun,
+} from 'lucide-react';
 import type { Atlas, ThemePref } from '../lib/types';
 import { formatCount } from '../lib/geo';
+import { isIosDevice } from '../lib/pwa';
 import Modal from './Modal';
 
 interface AboutProps {
   atlas: Atlas;
   themePref: ThemePref;
+  canInstall: boolean;
+  isStandalone: boolean;
   onThemePref: (pref: ThemePref) => void;
+  onInstall: () => void;
   onClose: () => void;
 }
 
-export default function About({ atlas, themePref, onThemePref, onClose }: AboutProps) {
+export default function About({
+  atlas,
+  themePref,
+  canInstall,
+  isStandalone,
+  onThemePref,
+  onInstall,
+  onClose,
+}: AboutProps) {
   const photos = atlas.places
     .filter((place) => place.img && place.imgPage)
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -83,6 +104,40 @@ export default function About({ atlas, themePref, onThemePref, onClose }: AboutP
             Dark
           </button>
         </div>
+      </section>
+
+      <section className="about-section">
+        <h3>Take it with you</h3>
+        {isStandalone ? (
+          <p>
+            Installed. The atlas keeps its shell, the city data and the map you
+            last opened on this device, so it still works when the signal drops.
+            Saved places stay here; shared lists live in their link.
+          </p>
+        ) : canInstall ? (
+          <>
+            <p>
+              Install the atlas for its own window, a home-screen icon and an
+              offline copy of the city. No account, no app store, no tracking.
+            </p>
+            <button type="button" className="button button-secondary about-install" onClick={onInstall}>
+              <Download size={14} />
+              Install Bengaluru Atlas
+            </button>
+          </>
+        ) : isIosDevice() ? (
+          <p>
+            On iPhone or iPad, open this page in Safari, tap <strong>Share</strong>{' '}
+            and choose <strong>Add to Home Screen</strong>. It opens full-screen
+            and keeps the atlas available offline.
+          </p>
+        ) : (
+          <p>
+            Use your browser’s <strong>Install app</strong> or{' '}
+            <strong>Add to Home Screen</strong> command. The atlas installs as a
+            standalone app and keeps the city available offline.
+          </p>
+        )}
       </section>
 
       <section className="about-section">
@@ -201,7 +256,8 @@ export default function About({ atlas, themePref, onThemePref, onClose }: AboutP
           </li>
           <li>
             Your saved places and visited marks live in this browser’s local
-            storage. There is no account and no analytics.
+            storage. A shared list travels only in the link you send. There is
+            no account and no analytics.
           </li>
         </ul>
       </section>
