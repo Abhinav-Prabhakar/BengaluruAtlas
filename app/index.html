@@ -3,6 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <script>
+      // Set the theme before first paint so dark mode never flashes light.
+      (function () {
+        try {
+          var pref = localStorage.getItem('bengaluru-atlas:theme-pref:v1');
+          var dark =
+            pref === 'dark' ||
+            (pref !== 'light' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        } catch (error) {
+          document.documentElement.dataset.theme = window.matchMedia(
+            '(prefers-color-scheme: dark)',
+          ).matches
+            ? 'dark'
+            : 'light';
+        }
+      })();
+    </script>
     <meta name="theme-color" content="#0E100C" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#F3EDE2" media="(prefers-color-scheme: light)" />
     <meta name="color-scheme" content="light dark" />
@@ -10,7 +29,7 @@
     <title>Bengaluru Atlas — a field guide to the city</title>
     <meta
       name="description"
-      content="9,000+ places across Bengaluru, 37 moods and live traffic. Pick a corner, a craving and a time window — tiffin rooms, lakes, temples, bookshops and hidden corners, routed on real roads."
+      content="9,000+ places and 200+ trails across Bengaluru, 37 moods and live traffic. Pick a corner, a craving and a time window — tiffin rooms, lakes, temples, bookshops and hidden corners, routed on real roads."
     />
     <meta name="author" content="Abhinav Prabhakar" />
     <link rel="canonical" href="https://abhinav-prabhakar.github.io/BengaluruAtlas/" />
@@ -25,7 +44,7 @@
     <meta property="og:title" content="Bengaluru Atlas — a field guide to the city" />
     <meta
       property="og:description"
-      content="Live traffic, real photos and 9,000+ places. Tiffin rooms, lakes, temples, bookshops and hidden corners — filtered by how far you'll go."
+      content="Live traffic, open-licensed photos, 9,000+ places and 200+ trails. Tiffin rooms, lakes, temples, bookshops and hidden corners — filtered by how far you'll go."
     />
     <meta property="og:url" content="https://abhinav-prabhakar.github.io/BengaluruAtlas/" />
     <meta property="og:image" content="https://abhinav-prabhakar.github.io/BengaluruAtlas/og.png" />
@@ -36,7 +55,7 @@
     <meta name="twitter:title" content="Bengaluru Atlas — a field guide to the city" />
     <meta
       name="twitter:description"
-      content="Live traffic, real photos and 9,000+ places. Tiffin rooms, lakes, temples, bookshops and hidden corners — filtered by how far you'll go."
+      content="Live traffic, open-licensed photos, 9,000+ places and 200+ trails. Tiffin rooms, lakes, temples, bookshops and hidden corners — filtered by how far you'll go."
     />
     <meta name="twitter:image" content="https://abhinav-prabhakar.github.io/BengaluruAtlas/og.png" />
   </head>

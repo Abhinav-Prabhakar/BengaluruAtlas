@@ -28,20 +28,30 @@ export default function WeatherChip() {
 
   useEffect(() => {
     let alive = true;
-    loadWeather().then((value) => {
-      if (alive) setWeather(value);
-    });
+    const load = () => {
+      loadWeather().then((value) => {
+        if (alive) setWeather(value);
+      });
+    };
+    load();
+    // Slightly longer than the cache lifetime, so each tick makes a real request.
+    const timer = window.setInterval(load, 11 * 60 * 1000);
     return () => {
       alive = false;
+      window.clearInterval(timer);
     };
   }, []);
 
   if (!weather) {
     return (
-      <div className="weather-chip weather-placeholder" aria-label="Bengaluru">
+      <div
+        className="weather-chip weather-placeholder"
+        aria-label="Bengaluru weather is unavailable"
+        title="Live weather from Open-Meteo is unavailable right now"
+      >
         <span className="weather-place">Bengaluru</span>
         <span className="weather-sep" />
-        <span className="weather-coords">12.97° N · 77.59° E</span>
+        <span className="weather-coords">Weather unavailable</span>
       </div>
     );
   }
@@ -54,7 +64,8 @@ export default function WeatherChip() {
   return (
     <div
       className={`weather-chip ${weather.golden ? 'is-golden' : ''}`}
-      title={`${weather.label}, ${weather.temp}°C in Bengaluru · ${weather.rainChance}% chance of rain in the next few hours`}
+      title={`Live from Open-Meteo: ${weather.label}, ${weather.temp}°C in Bengaluru · ${weather.rainChance}% chance of rain in the next few hours`}
+      aria-label={`Live weather in Bengaluru: ${weather.label}, ${weather.temp} degrees, ${weather.rainChance} percent chance of rain`}
     >
       {weather.golden ? (
         <Sunset size={15} strokeWidth={1.8} />

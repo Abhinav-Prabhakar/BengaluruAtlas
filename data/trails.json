@@ -280,5 +280,153 @@
         "note": "A vast campus on the Kanakapura Road with gardens and a lake."
       }
     ]
+  },
+  {
+    "id": "daytrip-bannerghatta",
+    "title": "Bannerghatta, wild and slow",
+    "kicker": "Day trip · 25–60 km south",
+    "note": "A national park, a butterfly enclosure and two quiet roads beyond it. Start at the gate before the buses arrive, then let the afternoon go loose.",
+    "kind": "daytrip",
+    "duration": "5–7 hours",
+    "distance": "70 km round trip",
+    "bestTime": "6am–2pm",
+    "color": "#5E8C63",
+    "stops": [
+      {
+        "name": "Bannerghatta National Park",
+        "lat": 12.8006,
+        "lon": 77.577,
+        "note": "The safari gate opens early; book the first slot and keep an eye on the canopy."
+      },
+      {
+        "name": "Butterfly Park",
+        "lat": 12.7982,
+        "lon": 77.5807,
+        "note": "A small enclosed garden of butterflies beside the zoo — good with children."
+      },
+      {
+        "name": "Ragihalli Forest",
+        "lat": 12.783,
+        "lon": 77.516,
+        "note": "Scrub forest and back roads; go with a local guide and carry water."
+      },
+      {
+        "name": "Muthyalamaduvu",
+        "lat": 12.736,
+        "lon": 77.628,
+        "note": "A seasonal waterfall in Anekal taluk — check the water before making the detour."
+      }
+    ]
+  },
+  {
+    "id": "daytrip-shivagange",
+    "title": "Shivagange, above the silk road",
+    "kicker": "Day trip · 60–90 km north-west",
+    "note": "A steep granite hill, a temple at its foot and two stops on the old northern road. The climb is short and sharp; the views are the point.",
+    "kind": "daytrip",
+    "duration": "8–9 hours",
+    "distance": "150 km round trip",
+    "bestTime": "6am–4pm",
+    "color": "#4E7A4B",
+    "stops": [
+      {
+        "name": "Shivagange Peak",
+        "lat": 13.1633,
+        "lon": 77.2247,
+        "note": "A steep climb on stone steps; start early and carry water. Monkeys are bold."
+      },
+      {
+        "name": "Shivagange Garbhagudi",
+        "lat": 13.1622,
+        "lon": 77.226,
+        "note": "The cave shrine at the base, busy with pilgrims on weekends."
+      },
+      {
+        "name": "Bhoga Nandeeshwara Temple",
+        "lat": 13.2494,
+        "lon": 77.2942,
+        "note": "A 9th-century temple complex with fine stonework and quiet courtyards."
+      },
+      {
+        "name": "Devanahalli Fort",
+        "lat": 13.247,
+        "lon": 77.713,
+        "note": "Tipu Sultan's birthplace: a low fort, a grassy moat and almost no crowd."
+      }
+    ]
+  },
+  {
+    "id": "daytrip-devarayanadurga",
+    "title": "Devarayanadurga, hill and spring",
+    "kicker": "Day trip · 55–70 km north",
+    "note": "A hill temple, a spring that never stops, and a forest on the way home. A good first day trip if you want the road without the crowds.",
+    "kind": "daytrip",
+    "duration": "7–8 hours",
+    "distance": "125 km round trip",
+    "bestTime": "6am–3pm",
+    "color": "#6B7A45",
+    "stops": [
+      {
+        "name": "Devarayanadurga Hill",
+        "lat": 13.3744,
+        "lon": 77.2383,
+        "note": "A granite hill with a temple on top and a long view north of the city."
+      },
+      {
+        "name": "Namada Chilume",
+        "lat": 13.3958,
+        "lon": 77.2406,
+        "note": "A spring beside the road, named for the mark Rama is said to have left."
+      },
+      {
+        "name": "Bhoga Narasimha Temple",
+        "lat": 13.365,
+        "lon": 77.24,
+        "note": "The older temple at the foot of the hill, with a stepped tank."
+      },
+      {
+        "name": "Turahalli Forest",
+        "lat": 12.8947,
+        "lon": 77.529,
+        "note": "A scrub-and-rock forest on the city edge; a soft landing on the way back."
+      }
+    ]
+  },
+  {
+    "id": "daytrip-srirangapatna",
+    "title": "Srirangapatna & the river",
+    "kicker": "Day trip · 130 km south-west",
+    "note": "An island fort town, a bird sanctuary and a formal garden at the end of the day. Leave before dawn and you will beat the Mysore Road traffic.",
+    "kind": "daytrip",
+    "duration": "9–10 hours",
+    "distance": "280 km round trip",
+    "bestTime": "6am–7pm",
+    "color": "#3F6F86",
+    "stops": [
+      {
+        "name": "Ranganathittu Bird Sanctuary",
+        "lat": 12.4244,
+        "lon": 76.6569,
+        "note": "Boat rides under the trees; best in the first hour after opening."
+      },
+      {
+        "name": "Srirangapatna Fort",
+        "lat": 12.4225,
+        "lon": 76.6944,
+        "note": "Tipu's island capital: walls, a mosque and the summer palace."
+      },
+      {
+        "name": "Nimishamba Temple",
+        "lat": 12.44,
+        "lon": 76.68,
+        "note": "A riverside temple on the Cauvery, a few minutes from the fort."
+      },
+      {
+        "name": "Brindavan Gardens",
+        "lat": 12.421,
+        "lon": 76.573,
+        "note": "Terraced gardens below the KRS dam; stay for the evening lights if you can."
+      }
+    ]
   }
 ]

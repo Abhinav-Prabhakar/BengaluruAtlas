@@ -19,7 +19,7 @@
   <img src="./assets/readme/hero-light.webp" alt="Bengaluru Atlas on desktop: live traffic ribbons on the map, place cards with photos, and 37 moods in the filter rail" />
 </a>
 
-<div align="center"><sub>MG Road · 20 minutes by auto · 805 places in reach · 13 corridors of live traffic.</sub></div>
+<div align="center"><sub>MG Road · 20 minutes by auto · 800+ places in reach · 13 corridors of live traffic.</sub></div>
 
 <br/>
 
@@ -56,17 +56,17 @@
 </tr>
 <tr>
 <td align="center"><sub><strong>Dark mode, drawn —</strong> not inverted. A second hand-tuned map style.</sub></td>
-<td align="center"><sub><strong>Twelve trails.</strong> Eight city walks, four day trips, every stop linked and fitted to the map.</sub></td>
+<td align="center"><sub><strong>206 trails.</strong> City walks, food crawls, temple runs and day trips — searchable, filterable, and fitted to the map.</sub></td>
 </tr>
 </table>
 
 <br/>
 
-<a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/?area=church-street&mood=chinese&time=30">
-  <img src="./assets/readme/discover.webp" alt="Chinese places within 30 minutes of Church Street, shown across central Bengaluru" />
+<a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/?area=church-street&mood=coffee&time=30">
+  <img src="./assets/readme/discover.webp" alt="Coffee places within 30 minutes of Church Street, shown across central Bengaluru" />
 </a>
 
-<div align="center"><sub>Church Street · 30 minutes · Chinese only · ordered by what’s worth the trip.</sub></div>
+<div align="center"><sub>Church Street · 30 minutes · filter coffee only · ordered by what’s worth the trip.</sub></div>
 
 <br/>
 <br/>
@@ -90,7 +90,7 @@
   <th align="center">9,362</th>
   <th align="center">201</th>
   <th align="center">53</th>
-  <th align="center">12</th>
+  <th align="center">206</th>
   <th align="center">0</th>
 </tr>
 </thead>
@@ -111,7 +111,7 @@
 
 <div align="center">
 
-<strong>Saved &amp; visited</strong> stays in your browser · <strong>shareable links</strong> remember the whole view · <strong>37 moods</strong> · <strong>live traffic</strong> · <strong>installable</strong> · <strong>no accounts</strong> · <strong>no tracking</strong> · <strong>no keys</strong>
+<strong>Saved &amp; visited</strong> stays in your browser · <strong>shareable links</strong> remember the whole view · <strong>37 moods</strong> · <strong>206 trails</strong> · <strong>live traffic</strong> · <strong>follows your device theme</strong> · <strong>installable</strong> · <strong>no accounts</strong> · <strong>no tracking</strong> · <strong>no keys</strong>
 
 </div>
 
@@ -141,7 +141,7 @@ npm run build   # → ../docs, ready for Pages</code></pre>
 
 <p><strong>The data</strong></p>
 
-<p>9,362 OpenStreetMap places, cleaned and categorised. 201 editorial picks with photographs, best times and a point of view. Traffic is modelled from 13 instrumented corridors; live readings come from the <a href="https://github.com/thecont1/traffic-monitor-lizard">traffic-monitor-lizard</a> dataset. Trail stops and area notes live in <a href="./data/"><code>data/</code></a>; the build scripts are in <a href="./scripts/"><code>scripts/</code></a>.</p>
+<p>9,362 OpenStreetMap places, cleaned and categorised. 201 editorial picks with best times and a point of view; 188 places carry an openly licensed photograph, and the rest get a designed cover. Traffic is modelled from 13 instrumented corridors; live readings come from the <a href="https://github.com/thecont1/traffic-monitor-lizard">traffic-monitor-lizard</a> dataset. 206 trails are assembled from curated anchors, and every stop links back to the atlas. Trail stops and area notes live in <a href="./data/"><code>data/</code></a>; the build scripts are in <a href="./scripts/"><code>scripts/</code></a>.</p>
 
 </td>
 </tr>

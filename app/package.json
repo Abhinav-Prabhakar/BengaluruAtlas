@@ -9,7 +9,8 @@
     "dev": "node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5173 --strictPort",
     "build": "node node_modules/typescript/bin/tsc --noEmit && node node_modules/vite/bin/vite.js build",
     "preview": "node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4173 --strictPort",
-    "data": "python3 ../scripts/02_build_atlas.py && python3 ../scripts/03_style_maps.py"
+    "data": "python3 ../scripts/02_build_atlas.py && python3 ../scripts/09_resolve_photo_credits.py && python3 ../scripts/08_build_trails.py && python3 ../scripts/02_build_atlas.py && python3 ../scripts/03_style_maps.py",
+    "data:photos": "python3 ../scripts/07_fetch_place_photos.py && python3 ../scripts/09_resolve_photo_credits.py"
   },
   "dependencies": {
     "lucide-react": "0.555.0",

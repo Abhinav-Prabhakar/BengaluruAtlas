@@ -1,8 +1,8 @@
-import type { Theme } from './types';
+import type { Theme, ThemePref } from './types';
 
 const SAVED_KEY = 'bengaluru-atlas:saved:v1';
 const VISITED_KEY = 'bengaluru-atlas:visited:v1';
-const THEME_KEY = 'bengaluru-atlas:theme:v1';
+const THEME_PREF_KEY = 'bengaluru-atlas:theme-pref:v1';
 
 function readString(key: string): string | null {
   try {
@@ -52,11 +52,22 @@ export function writeVisited(values: Set<string>): void {
   writeSet(VISITED_KEY, values);
 }
 
-export function readTheme(): Theme | null {
-  const value = readString(THEME_KEY);
-  return value === 'light' || value === 'dark' ? value : null;
+export function readThemePref(): ThemePref | null {
+  const value = readString(THEME_PREF_KEY);
+  return value === 'system' || value === 'light' || value === 'dark' ? value : null;
 }
 
+export function writeThemePref(pref: ThemePref): void {
+  writeString(THEME_PREF_KEY, pref);
+}
+
+/** Legacy helper; the atlas now stores a three-way preference. */
+export function readTheme(): Theme | null {
+  const pref = readThemePref();
+  return pref === 'light' || pref === 'dark' ? pref : null;
+}
+
+/** Legacy helper; kept for links and tests that still set a concrete theme. */
 export function writeTheme(theme: Theme): void {
-  writeString(THEME_KEY, theme);
+  writeThemePref(theme);
 }

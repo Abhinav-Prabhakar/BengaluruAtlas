@@ -12,6 +12,8 @@ export type TravelMode = 'walk' | 'bike' | 'auto' | 'cab';
 
 export type Theme = 'light' | 'dark';
 
+export type ThemePref = 'system' | 'light' | 'dark';
+
 export type TabId = 'places' | 'trails' | 'saved';
 
 export type OriginKind = 'area' | 'pin' | 'geo';
@@ -42,6 +44,8 @@ export interface Place {
   imgPage?: string | null;
   imgCredit?: string | null;
   imgLicense?: string | null;
+  /** `area` means the photo shows the neighbourhood, not the place itself. */
+  imgScope?: 'place' | 'area' | null;
   score: number;
   chain?: boolean;
   gem?: boolean;
@@ -84,6 +88,14 @@ export interface Trail {
   bestTime: string;
   color: string;
   stops: TrailStop[];
+  area?: string;
+  theme?: string;
+  tags?: string[];
+  img?: string | null;
+  imgPage?: string | null;
+  imgCredit?: string | null;
+  imgLicense?: string | null;
+  imgScope?: 'place' | 'area' | null;
 }
 
 export interface AtlasMeta {

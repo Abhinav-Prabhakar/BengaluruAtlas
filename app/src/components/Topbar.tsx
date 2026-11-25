@@ -1,10 +1,11 @@
 import { Info, Moon, Share2, Shuffle, Sun } from 'lucide-react';
-import type { Theme } from '../lib/types';
+import type { Theme, ThemePref } from '../lib/types';
 import { AtlasMark } from './Brand';
 import WeatherChip from './WeatherChip';
 
 interface TopbarProps {
   theme: Theme;
+  themePref: ThemePref;
   onTheme: () => void;
   onShare: () => void;
   onAbout: () => void;
@@ -14,6 +15,7 @@ interface TopbarProps {
 
 export default function Topbar({
   theme,
+  themePref,
   onTheme,
   onShare,
   onAbout,
@@ -49,8 +51,12 @@ export default function Topbar({
           type="button"
           className="icon-button"
           onClick={onTheme}
-          aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode${
+            themePref === 'system' ? ' (currently matching your device)' : ''
+          }`}
+          title={`Theme: ${
+            themePref === 'system' ? 'matching your device' : theme
+          } · switch to ${theme === 'dark' ? 'light' : 'dark'}`}
         >
           {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
         </button>

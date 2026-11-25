@@ -942,10 +942,14 @@ def build():
     areas = load_json(DATA / "areas.json") or []
     curated = load_json(DATA / "curated.json") or []
     trails = load_json(DATA / "trails.json") or []
+    generated_trails = load_json(DATA / "trails_generated.json") or []
+    place_photos = load_json(DATA / "place_photos.json") or {}
+    area_photos = load_json(DATA / "area_photos.json") or {}
     wiki = load_json(DATA / "wiki_images.json") or {}
     wiki_rest = load_json(DATA / "wiki_images_rest.json") or {}
     images_manual = load_json(DATA / "images_manual.json") or {}
     wiki_places = (load_json(DATA / "wiki_places.json") or {}).get("places") or []
+    wiki_photo_credits = load_json(DATA / "wiki_photo_credits.json") or {}
 
     # Transit is not a destination. Drop the old metro / railway / airport
     # entries from the editorial list so the atlas stays a guide to places.
@@ -981,10 +985,73 @@ def build():
     places.sort(key=lambda p: (-p["score"], p["name"]))
     print(f"dedupe: {before - len(places)} duplicate places removed")
 
-    # Resolve trail stops.
+    # Older Wikipedia page images arrived with only "Wikimedia Commons" as a
+    # credit. Apply resolved authors and licences, and drop logos or non-free
+    # files before the neighbourhood-photo fallback runs.
+    for place in places:
+        meta = wiki_photo_credits.get(place["id"])
+        if not meta:
+            continue
+        if meta.get("drop"):
+            place.update({
+                "img": None,
+                "imgPage": None,
+                "imgCredit": None,
+                "imgLicense": None,
+                "imgScope": None,
+            })
+        else:
+            place.update({
+                "imgPage": meta.get("page") or place.get("imgPage"),
+                "imgCredit": meta.get("credit") or "Wikimedia Commons",
+                "imgLicense": meta.get("license"),
+                "imgScope": "place",
+            })
+
+    # Open-licensed photographs. Curated places without a photo of their own
+    # borrow a neighbourhood photograph, clearly marked as such in the UI.
+    area_id_by_name = {norm(area["name"]): area["id"] for area in areas}
+    for place in places:
+        photo = place_photos.get(place["id"])
+        if photo and not place.get("img"):
+            place.update({
+                "img": photo["image"],
+                "imgPage": photo["page"],
+                "imgCredit": photo["credit"],
+                "imgLicense": photo["license"],
+                "imgScope": "place",
+            })
+        elif place.get("img"):
+            place["imgScope"] = "place"
+    borrowed = 0
+    for place in places:
+        if place.get("img") or not (place.get("curated") or place.get("score", 0) >= 45):
+            continue
+        photo = area_photos.get(area_id_by_name.get(norm(place["area"]), ""))
+        if not photo:
+            continue
+        place.update({
+            "img": photo["image"],
+            "imgPage": photo["page"],
+            "imgCredit": photo["credit"],
+            "imgLicense": photo["license"],
+            "imgScope": "area",
+        })
+        borrowed += 1
+    print(f"photos: {sum(1 for p in places if p.get('img'))} places, {borrowed} neighbourhood photos")
+
+    # Resolve trail stops. Hand-written trails refer to curated keys;
+    # generated trails refer to live place ids.
     by_key = {c["key"]: p for c, p in zip(curated, curated_places)}
+    place_by_id = {p["id"]: p for p in places}
+    area_photo_lookup = area_photos
     resolved_trails = []
-    for t in trails:
+    seen_trail_ids = set()
+    for t in trails + generated_trails:
+        trail_id = t.get("id")
+        if not trail_id or trail_id in seen_trail_ids:
+            continue
+        seen_trail_ids.add(trail_id)
         stops = []
         for s in t.get("stops", []):
             if isinstance(s, str):
@@ -995,12 +1062,55 @@ def build():
                     "key": s, "name": p["name"], "lat": p["lat"], "lon": p["lon"],
                     "cat": p["cat"], "note": p.get("note"), "id": p["id"],
                 })
+            elif s.get("placeId"):
+                p = place_by_id.get(s["placeId"])
+                if not p:
+                    continue
+                stops.append({
+                    "key": None, "name": p["name"], "lat": p["lat"], "lon": p["lon"],
+                    "cat": p["cat"], "note": p.get("note"), "id": p["id"],
+                })
             else:
                 stops.append({
                     "key": None, "name": s["name"], "lat": s["lat"], "lon": s["lon"],
                     "cat": "experience", "note": s.get("note"), "id": None,
                 })
-        resolved_trails.append({**t, "stops": stops, "stopCount": len(stops)})
+        if len(stops) < 2:
+            continue
+        area_counts = {}
+        for stop in stops:
+            place = place_by_id.get(stop.get("id") or "")
+            if place:
+                area_counts[place["area"]] = area_counts.get(place["area"], 0) + 1
+        area = t.get("area") or (max(area_counts, key=area_counts.get) if area_counts else "Bengaluru")
+        image = next(
+            (place_by_id[s["id"]] for s in stops if s.get("id") and place_by_id.get(s["id"], {}).get("img")),
+            None,
+        )
+        if image:
+            trail_img = {
+                "img": image["img"],
+                "imgPage": image.get("imgPage"),
+                "imgCredit": image.get("imgCredit"),
+                "imgLicense": image.get("imgLicense"),
+                "imgScope": image.get("imgScope") or "place",
+            }
+        else:
+            photo = area_photo_lookup.get(area_id_by_name.get(norm(area), ""))
+            trail_img = {
+                "img": photo["image"],
+                "imgPage": photo["page"],
+                "imgCredit": photo["credit"],
+                "imgLicense": photo["license"],
+                "imgScope": "area",
+            } if photo else {}
+        resolved_trails.append({
+            **t,
+            "area": area,
+            "stops": stops,
+            "stopCount": len(stops),
+            **trail_img,
+        })
 
     counts = {}
     for p in places:

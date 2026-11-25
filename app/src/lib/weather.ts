@@ -7,7 +7,7 @@ const WEATHER_URL =
   '&daily=sunset&timezone=Asia%2FKolkata&forecast_days=1';
 
 const CACHE_KEY = 'bengaluru-atlas:weather:v1';
-const MAX_AGE_MS = 30 * 60 * 1000;
+const MAX_AGE_MS = 10 * 60 * 1000;
 
 interface CachedWeather {
   at: number;

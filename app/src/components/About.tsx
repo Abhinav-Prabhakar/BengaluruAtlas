@@ -1,14 +1,16 @@
-import { ExternalLink, Github, Heart, MapPinned } from 'lucide-react';
-import type { Atlas } from '../lib/types';
+import { ExternalLink, Github, Heart, MapPinned, Monitor, Moon, Sun } from 'lucide-react';
+import type { Atlas, ThemePref } from '../lib/types';
 import { formatCount } from '../lib/geo';
 import Modal from './Modal';
 
 interface AboutProps {
   atlas: Atlas;
+  themePref: ThemePref;
+  onThemePref: (pref: ThemePref) => void;
   onClose: () => void;
 }
 
-export default function About({ atlas, onClose }: AboutProps) {
+export default function About({ atlas, themePref, onThemePref, onClose }: AboutProps) {
   const photos = atlas.places
     .filter((place) => place.img && place.imgPage)
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -45,6 +47,43 @@ export default function About({ atlas, onClose }: AboutProps) {
           <span>walks & day trips</span>
         </div>
       </div>
+
+      <section className="about-section">
+        <h3>Appearance</h3>
+        <p>
+          The atlas starts by matching your device. Set it here if you would
+          rather keep one theme regardless of the system setting.
+        </p>
+        <div className="theme-choice" role="group" aria-label="Theme preference">
+          <button
+            type="button"
+            className={themePref === 'system' ? 'is-on' : ''}
+            aria-pressed={themePref === 'system'}
+            onClick={() => onThemePref('system')}
+          >
+            <Monitor size={14} />
+            Match device
+          </button>
+          <button
+            type="button"
+            className={themePref === 'light' ? 'is-on' : ''}
+            aria-pressed={themePref === 'light'}
+            onClick={() => onThemePref('light')}
+          >
+            <Sun size={14} />
+            Light
+          </button>
+          <button
+            type="button"
+            className={themePref === 'dark' ? 'is-on' : ''}
+            aria-pressed={themePref === 'dark'}
+            onClick={() => onThemePref('dark')}
+          >
+            <Moon size={14} />
+            Dark
+          </button>
+        </div>
+      </section>
 
       <section className="about-section">
         <h3>How the travel window works</h3>
@@ -92,7 +131,8 @@ export default function About({ atlas, onClose }: AboutProps) {
             subjective part; the coordinates are not.
           </li>
           <li>
-            <strong>Neighbourhoods and trails.</strong> Hand-written, then
+            <strong>Neighbourhoods and trails.</strong> A hand-written core,
+            then {atlas.trails.length} routes assembled from the atlas and
             checked against the map. Trail lines are sketches between stops.
           </li>
           <li>
@@ -109,9 +149,16 @@ export default function About({ atlas, onClose }: AboutProps) {
       <section className="about-section">
         <h3>Photography</h3>
         <p>
-          Photographs are hotlinked from Wikimedia Commons under the licence
-          shown on each place. Every photo keeps a visible credit link, and the
-          full list is below.
+          Every place gets a picture. Where an openly licensed photograph
+          exists, it is hotlinked from Wikimedia Commons with the licence shown
+          on the place. Editorial picks without a photograph of their own use a
+          neighbourhood photograph, marked as such. Everything else gets a
+          designed cover drawn from its category and name.
+        </p>
+        <p>
+          Google Maps photography is not used: it is copyrighted, cannot be
+          hotlinked, and scraping it would break both the terms and the static
+          build. The atlas stays free and legally distributable.
         </p>
         <details className="photo-details">
           <summary>Photography credits ({photos.length})</summary>
@@ -123,6 +170,7 @@ export default function About({ atlas, onClose }: AboutProps) {
                 </a>
                 <span>
                   {' — '}
+                  {place.imgScope === 'area' ? 'Neighbourhood photo · ' : ''}
                   {place.imgCredit || 'Wikimedia Commons'}
                   {place.imgLicense ? ` · ${place.imgLicense}` : ''}
                 </span>

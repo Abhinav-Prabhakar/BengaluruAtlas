@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   ArrowUpRight,
   Bookmark,
+  CarFront,
   Check,
   Clock3,
   ExternalLink,
@@ -22,6 +23,7 @@ import {
   placeFacts,
 } from '../lib/places';
 import type { Place, Theme, TravelMode } from '../lib/types';
+import CoverArt, { coverSeed } from './CoverArt';
 
 interface DetailPanelProps {
   place: Place;
@@ -90,6 +92,10 @@ export default function DetailPanel({
     : null;
   const directionsHref = googleMapsDirectionsUrl(place, modeMeta.directions);
   const searchHref = googleMapsSearchUrl(place);
+  const uberHref =
+    'https://m.uber.com/ul/?action=setPickup&pickup=my_location' +
+    `&dropoff[latitude]=${place.lat}&dropoff[longitude]=${place.lon}` +
+    `&dropoff[nickname]=${encodeURIComponent(place.name)}`;
 
   return (
     <>
@@ -113,9 +119,14 @@ export default function DetailPanel({
             />
           ) : (
             <div className="detail-hero-art" aria-hidden="true">
+              <CoverArt
+                cat={place.cat}
+                seed={coverSeed(place.name)}
+                className="detail-cover-art"
+              />
               <span className="hero-ring hero-ring-a" />
               <span className="hero-ring hero-ring-b" />
-              <Icon size={54} strokeWidth={1.15} />
+              <Icon className="detail-cover-icon" size={22} strokeWidth={1.4} />
               <span className="hero-coords">{formatCoords(place.lat, place.lon)}</span>
             </div>
           )}
@@ -272,29 +283,32 @@ export default function DetailPanel({
             </button>
           </div>
 
-          {(webHref || wikiHref || place.phone) && (
-            <div className="detail-links">
-              {webHref && (
-                <a href={webHref} target="_blank" rel="noreferrer">
-                  <Globe2 size={13} />
-                  Website
-                  <ExternalLink size={11} />
-                </a>
-              )}
-              {wikiHref && (
-                <a href={wikiHref} target="_blank" rel="noreferrer">
-                  <ExternalLink size={13} />
-                  Wikipedia
-                </a>
-              )}
-              {place.phone && (
-                <a href={`tel:${place.phone.replace(/\s+/g, '')}`}>
-                  <Phone size={13} />
-                  {place.phone}
-                </a>
-              )}
-            </div>
-          )}
+          <div className="detail-links">
+            <a href={uberHref} target="_blank" rel="noreferrer">
+              <CarFront size={13} />
+              Uber here
+              <ExternalLink size={11} />
+            </a>
+            {webHref && (
+              <a href={webHref} target="_blank" rel="noreferrer">
+                <Globe2 size={13} />
+                Website
+                <ExternalLink size={11} />
+              </a>
+            )}
+            {wikiHref && (
+              <a href={wikiHref} target="_blank" rel="noreferrer">
+                <ExternalLink size={13} />
+                Wikipedia
+              </a>
+            )}
+            {place.phone && (
+              <a href={`tel:${place.phone.replace(/\s+/g, '')}`}>
+                <Phone size={13} />
+                {place.phone}
+              </a>
+            )}
+          </div>
 
           <footer className="detail-footer">
             {hasImage && place.imgPage && (
@@ -304,7 +318,8 @@ export default function DetailPanel({
                 target="_blank"
                 rel="noreferrer"
               >
-                Photo: {place.imgCredit || 'Wikimedia Commons'}
+                {place.imgScope === 'area' ? 'Neighbourhood photo' : 'Photo'}:{' '}
+                {place.imgCredit || 'Wikimedia Commons'}
                 {place.imgLicense ? ` · ${place.imgLicense}` : ''}
               </a>
             )}

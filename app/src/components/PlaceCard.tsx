@@ -4,6 +4,7 @@ import { CATEGORY_BY_ID, categoryColor } from '../lib/catalog';
 import { formatDistance } from '../lib/geo';
 import { describePlace } from '../lib/places';
 import type { Place, ResultRow, Theme } from '../lib/types';
+import CoverArt, { coverSeed } from './CoverArt';
 
 interface PlaceCardProps {
   row: ResultRow;
@@ -15,19 +16,11 @@ interface PlaceCardProps {
   onToggleSave: () => void;
 }
 
-function seedOf(text: string): number {
-  let hash = 0;
-  for (let i = 0; i < text.length; i += 1) {
-    hash = (hash * 31 + text.charCodeAt(i)) % 360;
-  }
-  return hash;
-}
-
 function Thumb({ place, theme }: { place: Place; theme: Theme }) {
   const [failed, setFailed] = useState(false);
   const meta = CATEGORY_BY_ID[place.cat];
   const Icon = meta.icon;
-  const seed = seedOf(place.name);
+  const seed = coverSeed(place.name);
   const style = {
     '--cat': categoryColor(place.cat, theme),
     '--seed': seed,
@@ -46,14 +39,19 @@ function Thumb({ place, theme }: { place: Place; theme: Theme }) {
         <span className="thumb-badge">
           <Icon size={11} strokeWidth={2} />
         </span>
+        {place.imgScope === 'area' && (
+          <span className="thumb-scope">area</span>
+        )}
       </span>
     );
   }
 
   return (
     <span className="place-thumb is-poster" style={style} aria-hidden="true">
-      <span className="poster-rings" />
-      <Icon className="poster-icon" size={30} strokeWidth={1.1} />
+      <CoverArt cat={place.cat} seed={seed} className="poster-art" />
+      <span className="poster-icon-badge">
+        <Icon size={11} strokeWidth={2.1} />
+      </span>
       <span className="poster-area">{place.area}</span>
     </span>
   );

@@ -33,12 +33,12 @@ import {
   type TrafficState,
 } from './lib/traffic';
 import {
-  readTheme,
+  readThemePref,
   readSaved,
   readVisited,
   writeSaved,
   writeVisited,
-  writeTheme,
+  writeThemePref,
 } from './lib/storage';
 import type {
   Atlas,
@@ -47,6 +47,7 @@ import type {
   ResultRow,
   TabId,
   Theme,
+  ThemePref,
   Trail,
   TravelMode,
 } from './lib/types';
@@ -179,11 +180,13 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
   const [tab, setTab] = useState<TabId>(initial.trail ? 'trails' : 'places');
   const [selected, setSelected] = useState<Place | null>(initial.place);
   const [trailId, setTrailId] = useState<string | null>(initial.trail?.id ?? null);
-  const [theme, setTheme] = useState<Theme>(
-    () =>
-      readTheme() ??
-      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+  const [themePref, setThemePref] = useState<ThemePref>(
+    () => readThemePref() ?? 'system',
   );
+  const [systemTheme, setSystemTheme] = useState<Theme>(() =>
+    window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+  );
+  const theme: Theme = themePref === 'system' ? systemTheme : themePref;
   const [saved, setSaved] = useState<Set<string>>(() => readSaved());
   const [visited, setVisited] = useState<Set<string>>(() => readVisited());
   const [pickMode, setPickMode] = useState(false);
@@ -421,14 +424,25 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
   }, [visited, atlas, places, origin, mode, traffic]);
 
   useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const sync = () => setSystemTheme(media.matches ? 'dark' : 'light');
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
+
+  useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    writeTheme(theme);
     document
       .querySelectorAll('meta[name="theme-color"]')
       .forEach((meta) =>
         meta.setAttribute('content', theme === 'dark' ? '#0E100C' : '#F3EDE2'),
       );
   }, [theme]);
+
+  useEffect(() => {
+    writeThemePref(themePref);
+  }, [themePref]);
 
   useEffect(() => {
     writeSaved(saved);
@@ -511,7 +525,7 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
   };
 
   const handleToggleTheme = () => {
-    setTheme((value) => (value === 'dark' ? 'light' : 'dark'));
+    setThemePref(theme === 'dark' ? 'light' : 'dark');
   };
 
   const handleSelectArea = (area: Atlas['areas'][number]) => {
@@ -757,7 +771,9 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
     <TrailsPanel
       trails={atlas.trails}
       activeTrail={trail}
+      origin={origin}
       theme={theme}
+      visited={visited}
       onSelectTrail={handleSelectTrail}
       onClearTrail={handleClearTrail}
       onSelectStop={(nextTrail, _stop, index) => handleSelectStop(nextTrail, index)}
@@ -800,6 +816,7 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
     <div className="app">
       <Topbar
         theme={theme}
+        themePref={themePref}
         onTheme={handleToggleTheme}
         onShare={handleShare}
         onAbout={() => setAboutOpen(true)}
@@ -980,7 +997,14 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
         </Modal>
       )}
 
-      {aboutOpen && <About atlas={atlas} onClose={() => setAboutOpen(false)} />}
+      {aboutOpen && (
+        <About
+          atlas={atlas}
+          themePref={themePref}
+          onThemePref={setThemePref}
+          onClose={() => setAboutOpen(false)}
+        />
+      )}
 
       {toast && (
         <div className="toast" role="status">

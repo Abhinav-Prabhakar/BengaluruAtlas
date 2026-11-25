@@ -792,15 +792,8 @@ export default function MapCanvas({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-    if (trail && trail.stops.length > 0) {
-      const bounds = new maplibregl.LngLatBounds();
-      for (const stop of trail.stops) bounds.extend([stop.lon, stop.lat]);
-      map.fitBounds(bounds, {
-        padding: { top: 96, bottom: 96, left: 72, right: 72 },
-        maxZoom: 14.6,
-        duration: 750,
-      });
-    } else if (shownTrailRef.current) {
+    // Fitting a selected trail happens below, with sheet-aware padding.
+    if (!trail && shownTrailRef.current) {
       map.easeTo({ center: [origin.lon, origin.lat], zoom: 13.2, duration: 650 });
     }
     shownTrailRef.current = trail?.id ?? null;
