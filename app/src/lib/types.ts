@@ -6,7 +6,6 @@ export type CategoryId =
   | 'worship'
   | 'shop'
   | 'stay'
-  | 'transit'
   | 'experience';
 
 export type TravelMode = 'walk' | 'bike' | 'auto' | 'cab';
@@ -47,6 +46,7 @@ export interface Place {
   chain?: boolean;
   gem?: boolean;
   curated?: boolean;
+  tier?: 'editor' | 'wiki' | 'atlas' | null;
   seasonal?: string | null;
   /** A trail stop that has no matching entry in the place index. */
   synthetic?: boolean;
@@ -116,6 +116,12 @@ export interface ResultRow {
   place: Place;
   distanceKm: number;
   minutes: number;
+  /** True when the time came from a real road route, not a straight-line estimate. */
+  live?: boolean;
+  traffic?: 'light' | 'moving' | 'heavy' | 'gridlock';
+  kmph?: number;
+  /** Free-flow speed of the nearest instrumented corridor. */
+  freeKmph?: number;
 }
 
 export interface WeatherNow {

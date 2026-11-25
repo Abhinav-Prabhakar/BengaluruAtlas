@@ -1,18 +1,12 @@
-import { DEFAULT_MINUTES, DEFAULT_MODE, MODE_BY_ID, TIME_STOPS, CATEGORY_BY_ID } from './catalog';
+import { DEFAULT_MINUTES, DEFAULT_MODE, MODE_BY_ID, TIME_STOPS } from './catalog';
 import { nearestArea } from './geo';
+import { MOOD_BY_ID } from './moods';
 import { resolvePlaceId } from './places';
-import type {
-  Atlas,
-  CategoryId,
-  Origin,
-  Place,
-  Trail,
-  TravelMode,
-} from './types';
+import type { Atlas, Origin, Place, Trail, TravelMode } from './types';
 
 export interface InitialState {
   origin: Origin;
-  categories: CategoryId[];
+  moods: string[];
   mode: TravelMode;
   minutes: number;
   query: string;
@@ -64,12 +58,12 @@ export function readInitialState(atlas: Atlas, places: Map<string, Place>): Init
     };
   }
 
-  const catParam = params.get('cat');
-  const categories = catParam
-    ? (catParam
+  const moodParam = params.get('mood');
+  const moods = moodParam
+    ? moodParam
         .split(',')
         .map((value) => value.trim())
-        .filter((value): value is CategoryId => value in CATEGORY_BY_ID) as CategoryId[])
+        .filter((value) => value in MOOD_BY_ID)
     : [];
 
   const modeParam = params.get('mode') as TravelMode | null;
@@ -91,12 +85,12 @@ export function readInitialState(atlas: Atlas, places: Map<string, Place>): Init
     ? atlas.trails.find((candidate) => candidate.id === trailParam) || null
     : null;
 
-  return { origin, categories, mode, minutes, query, place, trail };
+  return { origin, moods, mode, minutes, query, place, trail };
 }
 
 interface UrlState {
   origin: Origin;
-  categories: CategoryId[];
+  moods: string[];
   mode: TravelMode;
   minutes: number;
   query: string;
@@ -116,7 +110,7 @@ export function buildQueryString(state: UrlState): string {
       params.set('pin', state.origin.name);
     }
   }
-  if (state.categories.length) params.set('cat', state.categories.join(','));
+  if (state.moods.length) params.set('mood', state.moods.join(','));
   if (state.mode !== DEFAULT_MODE) params.set('mode', state.mode);
   if (state.minutes !== DEFAULT_MINUTES) params.set('time', String(state.minutes));
   if (state.query.trim()) params.set('q', state.query.trim());

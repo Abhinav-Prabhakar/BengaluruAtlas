@@ -49,19 +49,31 @@ export default function About({ atlas, onClose }: AboutProps) {
       <section className="about-section">
         <h3>How the travel window works</h3>
         <p>
-          The circle is a straight-line estimate, deliberately conservative. We
-          take typical door-to-door speeds — walking 4.5 km/h, cycling 11, auto
-          17, cab 23 — add a 1.28× road factor and a few minutes of overhead for
-          waiting and parking. Traffic, one-ways and the city’s own moods are not
-          in the maths.
+          The circle starts with typical door-to-door speeds — walking 4.5 km/h,
+          cycling 11, auto 17, cab 23 — a 1.28× road factor and a few minutes of
+          overhead for waiting and parking. Then it shrinks by the current
+          slowdown on the instrumented corridors nearest you.
         </p>
         <p className="about-formula">
-          minutes ≈ distance × 1.28 ÷ speed + overhead
+          reach ≈ (speed × moving minutes ÷ 1.28) ÷ live slowdown
         </p>
         <p>
-          The Directions button hands the last mile to Google Maps, which knows
-          the road, the signals and the traffic. Treat the atlas as a shortlist,
-          not a promise.
+          The first cards are routed on real roads through OSRM and multiplied
+          by the same live factor; the rest are modelled from distance, mode and
+          those corridor speeds. When GitHub is unreachable, the app falls back
+          to a baked 24-hour profile. The Directions button hands the last mile
+          to Google Maps — treat the atlas as a shortlist, not a promise.
+        </p>
+      </section>
+
+      <section className="about-section">
+        <h3>Live traffic</h3>
+        <p>
+          Thirteen Bengaluru corridors are sampled every ten minutes by the
+          open <a href="https://github.com/thecont1/traffic-monitor-lizard" target="_blank" rel="noreferrer">traffic-monitor-lizard</a>{' '}
+          dataset. The atlas reads the newest rows straight from the repository,
+          caches them for ten minutes and maps each reading onto the nearest
+          places. No key, no account, no server of our own.
         </p>
       </section>
 
@@ -84,8 +96,12 @@ export default function About({ atlas, onClose }: AboutProps) {
             checked against the map. Trail lines are sketches between stops.
           </li>
           <li>
-            <strong>Map.</strong> OpenFreeMap vector tiles, styled here in paper
-            and ink.
+            <strong>Map and routing.</strong> OpenFreeMap vector tiles, styled
+            here in paper and ink. Road times from OSRM on OpenStreetMap.de.
+          </li>
+          <li>
+            <strong>Traffic.</strong> The open traffic-monitor-lizard dataset,
+            with a baked hourly profile for when it cannot be reached.
           </li>
         </ul>
       </section>
@@ -120,13 +136,16 @@ export default function About({ atlas, onClose }: AboutProps) {
         <h3>Small print</h3>
         <p>
           OpenStreetMap is wonderful and imperfect: a restaurant may have
-          closed, a temple may have changed its hours. Check before you go.
-          Nothing here is live data, and nothing is sponsored.
+          closed, a temple may have changed its hours. Traffic is sampled every
+          ten minutes, not guaranteed. Check before you go — nothing here is
+          sponsored.
         </p>
         <ul className="about-list">
           <li>
             Place data © OpenStreetMap contributors, ODbL. Map tiles by
-            OpenFreeMap. Photography under the licences listed above.
+            OpenFreeMap. Routing by OSRM / OpenStreetMap.de. Traffic readings
+            from traffic-monitor-lizard. Photography under the licences listed
+            above.
           </li>
           <li>
             Typefaces: Fraunces, Manrope and JetBrains Mono, under the SIL Open

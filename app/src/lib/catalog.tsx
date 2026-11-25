@@ -9,7 +9,6 @@ import {
   Landmark,
   ShoppingBag,
   Sparkles,
-  TrainFront,
   Trees,
   UtensilsCrossed,
   type LucideIcon,
@@ -83,14 +82,6 @@ export const CATEGORIES: CategoryMeta[] = [
     darkColor: '#7DC3BA',
   },
   {
-    id: 'transit',
-    label: 'Transit',
-    full: 'Getting around',
-    icon: TrainFront,
-    color: '#58616E',
-    darkColor: '#A5AFBE',
-  },
-  {
     id: 'experience',
     label: 'Trips',
     full: 'Worth the trip',
@@ -162,7 +153,7 @@ export const MODE_BY_ID = Object.fromEntries(
 export const TIME_STOPS = [5, 10, 15, 20, 30, 45, 60] as const;
 
 export const DEFAULT_MODE: TravelMode = 'auto';
-export const DEFAULT_MINUTES = 15;
+export const DEFAULT_MINUTES = 20;
 
 export const DIET_LABEL: Record<string, string> = {
   veg: 'Vegetarian',

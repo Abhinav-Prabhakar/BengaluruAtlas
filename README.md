@@ -16,18 +16,18 @@
 <br/>
 
 <a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/">
-  <img src="./assets/readme/hero-light.webp" alt="Bengaluru Atlas on desktop: a map of central Bengaluru with a detail panel for Cubbon Park" />
+  <img src="./assets/readme/hero-light.webp" alt="Bengaluru Atlas on desktop: live traffic ribbons on the map, place cards with photos, and 37 moods in the filter rail" />
 </a>
 
-<div align="center"><sub>MG Road → Cubbon Park · 8 minutes by auto · one editorial pick out of 109.</sub></div>
+<div align="center"><sub>MG Road · 20 minutes by auto · 805 places in reach · 13 corridors of live traffic.</sub></div>
 
 <br/>
 
 <table>
 <tr>
 <td align="center" width="33%"><h3>Pick a corner</h3><p>53 neighbourhoods, from Chickpet to Whitefield. Or drop a pin anywhere.</p></td>
-<td align="center" width="33%"><h3>Name a mood</h3><p>Eat, coffee, parks, temples, bookshops, bars, museums, markets, transit, stays.</p></td>
-<td align="center" width="33%"><h3>Set a window</h3><p>Walk, cycle, auto or cab. Five minutes to an hour. Watch the city redraw itself.</p></td>
+<td align="center" width="33%"><h3>Name a mood</h3><p>37 moods — tiffin, Chinese, lakes, bookshops, temples, bars, breweries, sunsets, stays.</p></td>
+<td align="center" width="33%"><h3>Set a window</h3><p>Walk, cycle, auto or cab. Five minutes to an hour, with live traffic on the roads.</p></td>
 </tr>
 </table>
 
@@ -35,11 +35,11 @@
 
 <div align="center">
   <h3>One dial. The whole city.</h3>
-  <sub>Fifteen minutes to sixty. The circle grows, the list follows.</sub>
+  <sub>Five minutes to sixty. The circle grows, the list follows — and the clock is traffic-aware.</sub>
 </div>
 
 <a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/">
-  <img src="./assets/readme/reach.gif" alt="The travel-time dial expanding from 15 to 60 minutes as the map radius and place count grow" />
+  <img src="./assets/readme/reach.gif" alt="The travel-time dial expanding as the map radius and place count grow" />
 </a>
 
 <br/>
@@ -56,17 +56,17 @@
 </tr>
 <tr>
 <td align="center"><sub><strong>Dark mode, drawn —</strong> not inverted. A second hand-tuned map style.</sub></td>
-<td align="center"><sub><strong>Twelve trails.</strong> Eight city walks, four day trips, every stop linked.</sub></td>
+<td align="center"><sub><strong>Twelve trails.</strong> Eight city walks, four day trips, every stop linked and fitted to the map.</sub></td>
 </tr>
 </table>
 
 <br/>
 
-<a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/?area=church-street&cat=eat&time=30">
-  <img src="./assets/readme/discover.webp" alt="Eating places within 30 minutes of Church Street, shown across central Bengaluru" />
+<a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/?area=church-street&mood=chinese&time=30">
+  <img src="./assets/readme/discover.webp" alt="Chinese places within 30 minutes of Church Street, shown across central Bengaluru" />
 </a>
 
-<div align="center"><sub>Church Street · 30 minutes · eating only · 1,796 places, ordered by what’s worth the trip.</sub></div>
+<div align="center"><sub>Church Street · 30 minutes · Chinese only · ordered by what’s worth the trip.</sub></div>
 
 <br/>
 <br/>
@@ -87,8 +87,8 @@
 <table align="center">
 <thead>
 <tr>
-  <th align="center">10,143</th>
-  <th align="center">109</th>
+  <th align="center">9,362</th>
+  <th align="center">201</th>
   <th align="center">53</th>
   <th align="center">12</th>
   <th align="center">0</th>
@@ -107,11 +107,11 @@
 
 <br/>
 
-> **The honest bit.** Travel times are estimates — straight-line distance, typical door-to-door speeds, a 1.28× road factor. No live traffic, no pretend precision. Every listing opens in Google Maps, where the real routing and the “start directions” button live.
+> **The honest bit.** The first cards use real road routes from OSRM, adjusted by live readings from 13 instrumented Bengaluru corridors. The rest are modelled from the same speeds, with a baked 24-hour profile when GitHub is unreachable. Traffic updates every ten minutes; every listing opens Google Maps for turn-by-turn.
 
 <div align="center">
 
-<strong>Saved &amp; visited</strong> stays in your browser · <strong>shareable links</strong> remember the whole view · <strong>installable</strong> · <strong>no accounts</strong> · <strong>no tracking</strong> · <strong>no keys</strong>
+<strong>Saved &amp; visited</strong> stays in your browser · <strong>shareable links</strong> remember the whole view · <strong>37 moods</strong> · <strong>live traffic</strong> · <strong>installable</strong> · <strong>no accounts</strong> · <strong>no tracking</strong> · <strong>no keys</strong>
 
 </div>
 
@@ -141,14 +141,14 @@ npm run build   # → ../docs, ready for Pages</code></pre>
 
 <p><strong>The data</strong></p>
 
-<p>10,143 OpenStreetMap places, cleaned and categorised. 109 editorial picks with photographs, best times and a point of view. Trail stops and area notes live in <a href="./data/"><code>data/</code></a>. The build scripts are in <a href="./scripts/"><code>scripts/</code></a>.</p>
+<p>9,362 OpenStreetMap places, cleaned and categorised. 201 editorial picks with photographs, best times and a point of view. Traffic is modelled from 13 instrumented corridors; live readings come from the <a href="https://github.com/thecont1/traffic-monitor-lizard">traffic-monitor-lizard</a> dataset. Trail stops and area notes live in <a href="./data/"><code>data/</code></a>; the build scripts are in <a href="./scripts/"><code>scripts/</code></a>.</p>
 
 </td>
 </tr>
 </table>
 
 <div align="center">
-  <sub>Map data © OpenStreetMap contributors (ODbL) · styles and tiles by <a href="https://openfreemap.org">OpenFreeMap</a> · photographs from Wikimedia Commons · weather by <a href="https://open-meteo.com">Open-Meteo</a>.</sub>
+  <sub>Map data © OpenStreetMap contributors (ODbL) · styles and tiles by <a href="https://openfreemap.org">OpenFreeMap</a> · routing by <a href="https://routing.openstreetmap.de">OSRM / OpenStreetMap.de</a> · photographs from Wikimedia Commons · weather by <a href="https://open-meteo.com">Open-Meteo</a>.</sub>
   <br/>
   <sub>Made for Bengaluru. <a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/">Open the atlas →</a> · <a href="./PLAN.md">the original field plan</a></sub>
 </div>

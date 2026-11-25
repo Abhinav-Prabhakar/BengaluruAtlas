@@ -15,11 +15,23 @@ interface PlaceCardProps {
   onToggleSave: () => void;
 }
 
+function seedOf(text: string): number {
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) % 360;
+  }
+  return hash;
+}
+
 function Thumb({ place, theme }: { place: Place; theme: Theme }) {
   const [failed, setFailed] = useState(false);
   const meta = CATEGORY_BY_ID[place.cat];
   const Icon = meta.icon;
-  const style = { '--cat': categoryColor(place.cat, theme) } as CSSProperties;
+  const seed = seedOf(place.name);
+  const style = {
+    '--cat': categoryColor(place.cat, theme),
+    '--seed': seed,
+  } as CSSProperties;
 
   if (place.img && !failed) {
     return (
@@ -31,13 +43,18 @@ function Thumb({ place, theme }: { place: Place; theme: Theme }) {
           decoding="async"
           onError={() => setFailed(true)}
         />
+        <span className="thumb-badge">
+          <Icon size={11} strokeWidth={2} />
+        </span>
       </span>
     );
   }
 
   return (
-    <span className={`place-thumb is-fallback ${place.img ? 'is-broken' : ''}`} style={style}>
-      <Icon size={19} strokeWidth={1.6} />
+    <span className="place-thumb is-poster" style={style} aria-hidden="true">
+      <span className="poster-rings" />
+      <Icon className="poster-icon" size={30} strokeWidth={1.1} />
+      <span className="poster-area">{place.area}</span>
     </span>
   );
 }
@@ -56,6 +73,10 @@ export default function PlaceCard({
   const Icon = meta.icon;
   const color = categoryColor(place.cat, theme);
   const style = { '--cat': color } as CSSProperties;
+  const note = place.note ? describePlace(place) : null;
+  const tags = (place.tags || [])
+    .filter((tag) => tag.toLowerCase() !== meta.label.toLowerCase())
+    .slice(0, 3);
 
   return (
     <li className={`place-card ${selected ? 'is-selected' : ''}`} style={style}>
@@ -78,13 +99,25 @@ export default function PlaceCard({
               {place.sub} · {place.area}
             </span>
           </span>
-          <span className="place-note">{describePlace(place)}</span>
+          {note ? (
+            <span className="place-note">{note}</span>
+          ) : (
+            tags.length > 0 && (
+              <span className="place-tags">
+                {tags.map((tag) => (
+                  <i key={tag}>{tag}</i>
+                ))}
+              </span>
+            )
+          )}
           <span className="place-foot">
             <span className="place-cat">
               <Icon size={11} strokeWidth={2} />
               {meta.label}
             </span>
-            <span className="place-time">≈ {minutes} min</span>
+            <span className={`place-time ${row.live ? 'is-live' : ''}`}>
+              {row.live && <i className="live-dot" aria-hidden="true" />}≈ {minutes} min
+            </span>
             <span className="place-distance">{formatDistance(distanceKm)}</span>
             {place.gem && <span className="place-gem">gem</span>}
             {visited && (

@@ -13,13 +13,14 @@ interface PlacesPanelProps {
   saved: Set<string>;
   visited: Set<string>;
   selectedId: string | null;
-  categoriesActive: boolean;
+  moodsActive: boolean;
+  liveTimes: boolean;
   canWiden: boolean;
   onQuery: (query: string) => void;
   onSelect: (row: ResultRow) => void;
   onToggleSave: (place: ResultRow['place']) => void;
   onShowMore: () => void;
-  onClearCategories: () => void;
+  onClearMoods: () => void;
   onWiden: () => void;
   onOpenFilters: () => void;
 }
@@ -33,13 +34,14 @@ export default function PlacesPanel({
   saved,
   visited,
   selectedId,
-  categoriesActive,
+  moodsActive,
+  liveTimes,
   canWiden,
   onQuery,
   onSelect,
   onToggleSave,
   onShowMore,
-  onClearCategories,
+  onClearMoods,
   onWiden,
   onOpenFilters,
 }: PlacesPanelProps) {
@@ -128,13 +130,13 @@ export default function PlacesPanel({
                 Clear search
               </button>
             )}
-            {categoriesActive && (
+            {moodsActive && (
               <button
                 type="button"
                 className="button button-secondary"
-                onClick={onClearCategories}
+                onClick={onClearMoods}
               >
-                All categories
+                All moods
               </button>
             )}
             {canWiden && (
@@ -173,8 +175,9 @@ export default function PlacesPanel({
               </p>
             )}
             <p className="results-fine">
-              Times are estimates, not live traffic. Distances are as the crow
-              flies.
+              {liveTimes
+                ? 'Times on the first cards are routed on real roads and cut by live corridor speeds.'
+                : 'Times are modelled from distance, mode and live corridor speeds.'}
             </p>
           </div>
         </>

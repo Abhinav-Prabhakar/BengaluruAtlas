@@ -34,7 +34,6 @@ CATEGORY_LABELS = {
     "worship": "Temples & faith",
     "shop": "Markets & shops",
     "stay": "Stay",
-    "transit": "Metro & transit",
     "experience": "Experiences",
 }
 
@@ -193,9 +192,8 @@ def osm_categories(tags):
             "hostel": "Hostel", "resort": "Resort",
         }[tourism]
 
-    if railway == "station" or public_transport == "station":
-        return "transit", "Railway station"
-
+    # Transit is not a destination. The atlas is for places worth going to,
+    # so stations and stops are deliberately left out of the POI layer.
     return None
 
 
@@ -412,6 +410,10 @@ def name_similarity(a, b):
         return 1.0
     if len(a) > 3 and len(b) > 3 and (a in b or b in a):
         return 0.88
+    # "Lal Bagh" and "Lalbagh Botanical Gardens" are the same place.
+    ca, cb = a.replace(" ", ""), b.replace(" ", "")
+    if len(ca) > 4 and len(cb) > 4 and (ca in cb or cb in ca):
+        return 0.84
     ta, tb = set(a.split()), set(b.split())
     if ta and tb:
         j = len(ta & tb) / len(ta | tb)
@@ -487,6 +489,7 @@ def merge_curated(curated, osm_places, areas, wiki, rest, manual):
             "chain": bool(c.get("chain")),
             "gem": bool(c.get("gem")),
             "curated": True,
+            "tier": "editor",
             "seasonal": c.get("seasonal"),
         }
         out.append(place)
@@ -510,6 +513,431 @@ def dedupe_osm(osm_places):
     return keep
 
 
+# ---------------------------------------------------------------------------
+# Atlas picks
+#
+# The hand-written list stays small and deliberate. Beyond it, we promote the
+# most interesting OpenStreetMap places into a second tier of atlas picks:
+# museums, temples, lakes, bookshops, markets, old cafes and the like. They get
+# a short note, a few visual tags and any Wikimedia photograph we already have.
+# ---------------------------------------------------------------------------
+
+PROMOTE = {
+    "culture": 34,
+    "worship": 28,
+    "outdoors": 28,
+    "shop": 24,
+    "coffee": 18,
+    "eat": 18,
+    "stay": 4,
+}
+PER_AREA = {
+    "culture": 3,
+    "worship": 2,
+    "outdoors": 3,
+    "shop": 3,
+    "coffee": 3,
+    "eat": 2,
+    "stay": 1,
+}
+MIN_SCORE = {
+    "culture": 22,
+    "worship": 20,
+    "outdoors": 24,
+    "shop": 24,
+    "coffee": 28,
+    "eat": 30,
+    "stay": 50,
+}
+EXCLUDE_SUB = {
+    "shop": {"Mall", "Department store"},
+    "eat": {"Food court"},
+}
+
+
+def build_image_lookup(wiki, wiki_rest):
+    lookup = {}
+    for source in (wiki_rest or {}, wiki or {}):
+        for key, value in source.items():
+            lookup.setdefault(norm(key), value)
+    return lookup
+
+
+def promo_image(place, lookup):
+    keys = [norm(place["name"])]
+    if place.get("wiki"):
+        keys.append(norm(place["wiki"]))
+    for key in keys:
+        entry = lookup.get(key)
+        if not entry or not entry.get("image"):
+            continue
+        page = entry.get("page")
+        if not page and place.get("wiki"):
+            page = f'https://en.wikipedia.org/wiki/{place["wiki"].replace(" ", "_")}'
+        if not page and entry.get("title"):
+            page = f'https://en.wikipedia.org/wiki/{entry["title"].replace(" ", "_")}'
+        return entry["image"], page
+    return None, None
+
+
+def promo_why(place):
+    tags = {t.lower() for t in place.get("tags", [])}
+    out = []
+    if tags & {"heritage", "monument", "fort", "palace", "memorial", "architecture"}:
+        out.append("Heritage")
+    if tags & {"park", "garden", "lake", "nature reserve"}:
+        out.append("Green")
+    if tags & {"books", "library"}:
+        out.append("Books")
+    if tags & {"art", "gallery", "museum", "artwork"}:
+        out.append("Art")
+    if tags & {"market", "shopping", "bazaar"}:
+        out.append("Market")
+    if tags & {"temple", "church", "mosque", "hindu", "christian", "muslim"}:
+        out.append("Quiet")
+    if tags & {"viewpoint", "views", "sunset"}:
+        out.append("Views")
+    if place["cat"] in {"eat", "coffee"}:
+        out.append("Local")
+    if place["cat"] == "outdoors":
+        out.append("Outdoors")
+    if place["cat"] == "culture":
+        out.append("Culture")
+    return out[:3] or ["Atlas pick"]
+
+
+def promo_note(place):
+    area = place["area"]
+    sub = place["sub"].lower()
+    cat = place["cat"]
+    if cat == "culture":
+        return f"A {sub} in {area}, part of the city's quieter cultural layer."
+    if cat == "worship":
+        return f"A {sub} in {area}; go early or at dusk for the calm."
+    if cat == "outdoors":
+        return f"A {sub} in {area} — a green pause in the city."
+    if cat == "shop":
+        return f"A {sub} in {area} worth a slow browse."
+    if cat == "coffee":
+        return f"A neighbourhood {sub} in {area}."
+    if cat == "eat":
+        return f"A {sub} in {area}."
+    if cat == "stay":
+        return f"A stay in {area}."
+    return f"A place in {area}."
+
+
+def promo_best_time(cat):
+    return {
+        "culture": "Afternoon",
+        "worship": "Early morning or dusk",
+        "outdoors": "Morning or sunset",
+        "shop": "Late morning",
+        "coffee": "Morning or afternoon",
+        "eat": "Lunch or dinner",
+        "stay": None,
+    }.get(cat)
+
+
+def promote_interesting(remaining, curated_places, image_lookup):
+    curated_names = [p["name"] for p in curated_places]
+    selected = []
+    area_counts = {}
+    for cat, target in PROMOTE.items():
+        pool = [
+            p for p in remaining
+            if p["cat"] == cat
+            and p["score"] >= MIN_SCORE[cat]
+            and p["sub"] not in EXCLUDE_SUB.get(cat, set())
+            and not p.get("chain")
+            and p["name"].strip().lower() not in GENERIC_NAMES
+        ]
+        # Do not repeat a hand-curated place under another OSM object.
+        pool = [
+            p for p in pool
+            if not any(name_similarity(p["name"], name) >= 0.92 for name in curated_names)
+        ]
+        pool.sort(key=lambda p: (-p["score"], p["name"]))
+        chosen = 0
+        for p in pool:
+            if chosen >= target:
+                break
+            if area_counts.get((cat, p["area"]), 0) >= PER_AREA[cat]:
+                continue
+            # Skip near-identical objects already promoted in this category.
+            duplicate = any(
+                q["cat"] == cat
+                and (
+                    name_similarity(p["name"], q["name"]) >= 0.92
+                    or haversine_km(p["lat"], p["lon"], q["lat"], q["lon"]) < 0.12
+                )
+                for q in selected
+            )
+            if duplicate:
+                continue
+            img, img_page = promo_image(p, image_lookup)
+            promoted = {
+                **p,
+                "note": promo_note(p),
+                "why": promo_why(p),
+                "bestTime": promo_best_time(cat),
+                "price": p.get("price"),
+                "img": img,
+                "imgPage": img_page,
+                "imgCredit": None,
+                "imgLicense": None,
+                "score": min(82, max(56, p["score"] + 18)),
+                "gem": False,
+                "curated": True,
+                "tier": "atlas",
+            }
+            selected.append(promoted)
+            area_counts[(cat, p["area"])] = area_counts.get((cat, p["area"]), 0) + 1
+            chosen += 1
+    return selected
+
+
+WIKI_SKIP = re.compile(
+    r"\b(inscriptions?|hero stones?|strike|riots?|battle|elections?|hospitals?|medical|"
+    r"sanatorium|schools?|colleges?|universit|academy|institute|tech park|aerodrome|"
+    r"air force|railway|ttmc|metro|bus station|sports club|aerodrome|company|limited|"
+    r"loco shed|terminal|sanatorium|foundation|society|trust)\b",
+    re.I,
+)
+WIKI_SKIP_TITLES = {
+    "Indira Canteens", "JustBooks", "Treebo Hotels", "The Park Hotels", "Centro (store)",
+    "Darshini (restaurant)", "Samsung Opera House", "Prestige Kingfisher Towers",
+    "Global Village Tech Park", "Diesel & Electric Loco Shed, Krishnarajapuram",
+    "Sir M. Visvesvaraya Terminal", "Atal Bihari Vajpayee TTMC", "Banashankari TTMC",
+    "Three Ovals KSCA Stadium", "Kanteerava Indoor Stadium", "Koramangala Indoor Stadium",
+    "Mantri Square", "Orion Mall", "Nexus Mall (Koramangala)", "Garuda Mall",
+}
+WIKI_SKIP_TEXT = re.compile(
+    r"\b(hospital|multispecialty|school|college|university|software company|"
+    r"information technology|tech park|residential|apartment|real estate|"
+    r"railway station|metro station|bus terminus)\b",
+    re.I,
+)
+
+WIKI_KINDS = [
+    ("worship", re.compile(r"\b(temple|church|masjid|mosque|basilica|gudi|math|shrine|chapel|tabernacle)\b", re.I)),
+    ("outdoors", re.compile(r"\b(lake|reservoir|tank|park|garden|stadium|aquatic|ground|betta|hill|nursery|grove)\b", re.I)),
+    ("eat", re.compile(r"\b(restaurant|tiffin|cafe|coffee|bakery|food street|darshini|biryani|hotel)\b", re.I)),
+    ("shop", re.compile(r"\b(market|mall|bazaar|bookshop|bookstore|books|street)\b", re.I)),
+    ("culture", re.compile(r"\b(museum|gallery|palace|fort|soudha|memorial|hall|parishath|kalakshetra|planetarium|theatre|archive|library|cemetery|tower|mahal|observatory)\b", re.I)),
+]
+
+WIKI_SUBS = [
+    ("Lake", r"\b(lake|reservoir|tank)\b"), ("Park", r"\bpark\b"), ("Garden", r"\bgarden"),
+    ("Stadium", r"\b(stadium|aquatic centre|ground)\b"),
+    ("Temple", r"\b(temple|gudi|shrine|math)\b"), ("Church", r"\bchurch\b"),
+    ("Mosque", r"\b(masjid|mosque)\b"), ("Basilica", r"\bbasilica\b"),
+    ("Museum", r"\bmuseum\b"), ("Gallery", r"\bgallery\b"), ("Palace", r"\bpalace\b"),
+    ("Fort", r"\bfort\b"), ("Market", r"\b(market|bazaar)\b"), ("Mall", r"\bmall\b"),
+    ("Theatre", r"\b(theatre|kalakshetra|hall)\b"), ("Memorial", r"\bmemorial\b"),
+    ("Planetarium", r"\bplanetarium\b"), ("Library", r"\blibrary\b"),
+    ("Street", r"\b(street|road)\b"), ("Building", r"\b(soudha|building|house)\b"),
+]
+
+
+def wiki_category(title, kinds):
+    if re.search(r"\bpalace hotel\b|\bresort\b", title, re.I):
+        return "stay"
+    for cat, pattern in WIKI_KINDS:
+        if pattern.search(title):
+            return cat
+    for kind in kinds:
+        if kind != "culture":
+            return kind
+    return "culture"
+
+
+def wiki_sub(title):
+    for label, pattern in WIKI_SUBS:
+        if re.search(pattern, title, re.I):
+            return label
+    return "Landmark"
+
+
+def first_sentence(text, limit=170):
+    text = re.sub(r"\s+", " ", (text or "")).strip()
+    if not text:
+        return ""
+    cut = re.split(r"(?<=[a-z0-9\)\]”\"'][.!?])\s+", text)[0]
+    if len(cut) > limit:
+        cut = cut[:limit].rsplit(" ", 1)[0].rstrip(",;:") + "…"
+    return cut
+
+
+def merge_wiki(rows, curated_places, osm_places, areas):
+    """Turn Wikipedia entries into editorial picks with real photos."""
+    existing = list(curated_places)
+    out = []
+    for row in rows:
+        title = row["title"]
+        if title in WIKI_SKIP_TITLES or WIKI_SKIP.search(title):
+            continue
+        if WIKI_SKIP_TEXT.search(first_sentence(row.get("extract"))):
+            continue
+        cat = wiki_category(title, row.get("kinds") or [])
+        lat, lon = row.get("lat"), row.get("lon")
+        osm = None
+        if lat is None:
+            # No coordinate on Wikipedia: fall back to a same-named OSM object,
+            # but only when the name is unambiguous in the city.
+            key = norm(title)
+            matches = [
+                p for p in osm_places
+                if norm(p["name"]) == key or norm(p["name"]).startswith(key + " ")
+            ]
+            if not matches:
+                continue
+            if len(matches) > 1 and max(
+                haversine_km(matches[0]["lat"], matches[0]["lon"], m["lat"], m["lon"])
+                for m in matches[1:]
+            ) > 1.0:
+                continue
+            osm = matches[0]
+            lat, lon = osm["lat"], osm["lon"]
+        else:
+            # Prefer the OSM pin when one exists within 250 m.
+            for p in osm_places:
+                if haversine_km(lat, lon, p["lat"], p["lon"]) < 0.25 and name_similarity(p["name"], title) > 0.8:
+                    osm = p
+                    break
+        if any(
+            name_similarity(p["name"], title) >= 0.9
+            or haversine_km(lat, lon, p["lat"], p["lon"]) < 0.12
+            for p in existing
+        ):
+            continue
+        note = first_sentence(row.get("extract"))
+        area = nearest_area(lat, lon, areas)
+        sub = wiki_sub(title)
+        if not note:
+            note = f"A {sub.lower()} in {area}."
+        why = {
+            "culture": ["Heritage", "Collection", "Architecture"],
+            "worship": ["Calm", "Heritage", "Architecture"],
+            "outdoors": ["Green", "Walk", "Fresh air"],
+            "shop": ["Browse", "Local", "Market"],
+            "eat": ["Local", "Classic", "Must try"],
+            "stay": ["Stay", "Neighbourhood"],
+        }.get(cat, ["City life"])
+        place = {
+            "id": f'wiki:{norm(title).replace(" ", "-")}',
+            "name": title,
+            "cat": cat,
+            "sub": sub,
+            "lat": round(lat, 5),
+            "lon": round(lon, 5),
+            "area": area,
+            "note": note,
+            "why": why[:3],
+            "mustTry": None,
+            "bestTime": promo_best_time(cat),
+            "price": None,
+            "diet": None,
+            "tags": [sub.lower()],
+            "addr": (osm or {}).get("addr") or "",
+            "hours": (osm or {}).get("hours"),
+            "web": (osm or {}).get("web"),
+            "phone": (osm or {}).get("phone"),
+            "wiki": title,
+            "wd": row.get("wikidata"),
+            "osm": (osm or {}).get("osm"),
+            "img": row.get("image"),
+            "imgPage": row.get("page"),
+            "imgCredit": "Wikimedia Commons" if row.get("image") else None,
+            "imgLicense": None,
+            "score": 72 if row.get("image") else 64,
+            "chain": False,
+            "gem": False,
+            "curated": True,
+            "tier": "wiki",
+        }
+        out.append(place)
+        existing.append(place)
+    return out
+
+
+def add_wiki_images(places, rows):
+    """Give any place with a matching encyclopedia entry a real photo."""
+    index = {}
+    for row in rows:
+        index.setdefault(norm(row["title"]), row)
+        # "Foo, Bengaluru" also answers to "Foo".
+        short = re.sub(r",?\s*(bengaluru|bangalore)$", "", row["title"], flags=re.I)
+        index.setdefault(norm(short), row)
+    added = 0
+    for p in places:
+        if p.get("img"):
+            continue
+        row = index.get(norm(p["name"]))
+        if not row or not row.get("image"):
+            continue
+        # Avoid attaching a photo of a different place with the same name.
+        if row.get("lat") is not None and haversine_km(p["lat"], p["lon"], row["lat"], row["lon"]) > 2.5:
+            continue
+        p["img"] = row["image"]
+        p["imgPage"] = row["page"]
+        p["imgCredit"] = "Wikimedia Commons"
+        added += 1
+    return added
+
+
+def name_tokens(name):
+    stop = {
+        "restaurant", "temple", "church", "museum", "garden", "gardens", "park",
+        "lake", "hotel", "house", "palace", "market", "bar", "cafe", "coffee",
+        "bakery", "theatre", "theater", "gallery", "memorial", "statue", "circle",
+        "road", "street", "layout", "nagar", "bengaluru", "bangalore", "indian",
+        "south", "north", "east", "west", "new", "old", "the", "and", "of",
+    }
+    return {w for w in norm(name).split() if len(w) >= 5 and w not in stop}
+
+
+def dedupe_final(places):
+    """One entry per real-world place, across editor, wiki and OSM layers.
+
+    The layers are built independently, so the same museum can arrive as an
+    editor pick, a Wikipedia article and an OSM way within a few dozen metres.
+    Keep the richest, most editorial version and drop the rest.
+    """
+    tier_rank = {"editor": 0, "wiki": 1, "atlas": 2}
+
+    def rank(p):
+        return (
+            tier_rank.get(p.get("tier"), 3),
+            0 if p.get("img") else 1,
+            -p.get("score", 0),
+        )
+
+    kept = []
+    for place in sorted(places, key=rank):
+        duplicate = False
+        for other in kept:
+            km = haversine_km(place["lat"], place["lon"], other["lat"], other["lon"])
+            if km > 1.2:
+                continue
+            similar = name_similarity(place["name"], other["name"])
+            if km < 0.02 and similar >= 0.85:
+                duplicate = True
+                break
+            if km < 0.8 and similar >= 0.85:
+                duplicate = True
+                break
+            if km < 0.35 and similar >= 0.55:
+                duplicate = True
+                break
+            if km < 0.25 and (name_tokens(place["name"]) & name_tokens(other["name"])):
+                duplicate = True
+                break
+        if not duplicate:
+            kept.append(place)
+    return kept
+
+
 def build():
     areas = load_json(DATA / "areas.json") or []
     curated = load_json(DATA / "curated.json") or []
@@ -517,6 +945,11 @@ def build():
     wiki = load_json(DATA / "wiki_images.json") or {}
     wiki_rest = load_json(DATA / "wiki_images_rest.json") or {}
     images_manual = load_json(DATA / "images_manual.json") or {}
+    wiki_places = (load_json(DATA / "wiki_places.json") or {}).get("places") or []
+
+    # Transit is not a destination. Drop the old metro / railway / airport
+    # entries from the editorial list so the atlas stays a guide to places.
+    curated = [c for c in curated if c.get("category") != "transit"]
 
     elements = load_osm()
     osm_places = []
@@ -524,42 +957,6 @@ def build():
         p = make_osm_place(el, areas)
         if p:
             osm_places.append(p)
-    osm_places.extend(train_metro(areas))
-
-    # Railway stations, deduped, only real stations.
-    seen_rail = set()
-    for el in (load_json(RAW / "osm_transit.json") or {}).get("elements", []):
-        tags = el.get("tags", {})
-        if tags.get("railway") != "station" or not tags.get("name"):
-            continue
-        pt = element_point(el)
-        if not pt:
-            continue
-        key = norm(tags["name"])
-        if key in seen_rail:
-            continue
-        seen_rail.add(key)
-        lat, lon = pt
-        osm_places.append({
-            "id": f"rail:{key}",
-            "name": clean_name(tags["name"]),
-            "cat": "transit",
-            "sub": "Railway station",
-            "lat": round(lat, 5),
-            "lon": round(lon, 5),
-            "area": nearest_area(lat, lon, areas),
-            "tags": ["Indian Railways"],
-            "addr": address(tags),
-            "hours": None,
-            "web": tags.get("website"),
-            "phone": None,
-            "wiki": wiki_title(tags),
-            "wd": tags.get("wikidata"),
-            "osm": element_id(el),
-            "score": 30,
-            "chain": False,
-            "gem": False,
-        })
 
     curated_places, used = merge_curated(curated, osm_places, areas, wiki, wiki_rest, images_manual)
     remaining = dedupe_osm([p for p in osm_places if p["id"] not in used])
@@ -567,9 +964,22 @@ def build():
     # except any that scored unusually high (a historic chain location, etc.).
     remaining = [p for p in remaining if not p.get("chain") or p["score"] >= 55]
 
-    places = curated_places + remaining
+    wiki_picks = merge_wiki(wiki_places, curated_places, remaining, areas)
+    image_lookup = build_image_lookup(wiki, wiki_rest)
+    promoted = promote_interesting(remaining, curated_places + wiki_picks, image_lookup)
+    promoted_ids = {p["id"] for p in promoted}
+    promoted_wiki_ids = {p["id"] for p in wiki_picks}
+
+    places = curated_places + wiki_picks + promoted + [
+        p for p in remaining
+        if p["id"] not in promoted_ids and f'wiki:{norm(p["name"]).replace(" ", "-")}' not in promoted_wiki_ids
+    ]
+    photos = add_wiki_images(places, wiki_places)
+    before = len(places)
+    places = dedupe_final(places)
     # Curated entries always win; sort by score then name for stable output.
     places.sort(key=lambda p: (-p["score"], p["name"]))
+    print(f"dedupe: {before - len(places)} duplicate places removed")
 
     # Resolve trail stops.
     by_key = {c["key"]: p for c, p in zip(curated, curated_places)}
@@ -606,10 +1016,12 @@ def build():
         "sources": [
             "© OpenStreetMap contributors (ODbL)",
             "OpenFreeMap (map tiles)",
+            "OSRM / OpenStreetMap.de (road routing)",
+            "traffic-monitor-lizard (live corridor readings)",
             "Wikipedia / Wikimedia Commons (curated photography)",
             "Open-Meteo (weather)",
         ],
-        "note": "Travel times are estimates from crow-flies distance and mode speeds, not live traffic. Verify with Google Maps before you go.",
+        "note": "Travel times on the first cards are routed on real roads and adjusted for live corridor speeds; the rest are modelled from distance, mode and the same live readings. Check Google Maps before you set off.",
     }
 
     payload = {"meta": meta, "areas": areas, "places": places, "trails": resolved_trails}

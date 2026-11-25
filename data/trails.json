@@ -1,164 +1,284 @@
 [
   {
-    "id":"old-bangalore-morning",
-    "title":"Old Bangalore, early",
-    "kicker":"Temples, dosas and a flower market",
-    "note":"Start before the city wakes. A rock, a temple, two legendary tiffin rooms and the best flower market in India, all within a few kilometres.",
-    "kind":"walk",
-    "duration":"4 hours",
-    "distance":"4 km",
-    "bestTime":"7am–11am",
-    "color":"#C8542D",
-    "stops":["bugle-rock","bull-temple","brahmins-coffee-bar","vidyarthi-bhavan","kr-market","tipu-summer-palace"]
-  },
-  {
-    "id":"colonial-core",
-    "title":"The colonial core",
-    "kicker":"Cubbon Park to Church Street",
-    "note":"The city's civic heart on foot: a park, a red-brick courthouse, a library, a cathedral and a very old restaurant.",
-    "kind":"walk",
-    "duration":"3–4 hours",
-    "distance":"3.5 km",
-    "bestTime":"8am–noon or 4–7pm",
-    "color":"#2E5B45",
-    "stops":["cubbon-park","attara-kacheri","state-central-library","vidhana-soudha","st-marks-cathedral","koshys","church-street","mg-road"]
-  },
-  {
-    "id":"museum-mile",
-    "title":"Museum mile, rain or shine",
-    "kicker":"A monsoon-proof afternoon",
-    "note":"When the clouds open, head for the museums. Art, engines, a dinosaur and a quiet garden, with coffee at the end.",
-    "kind":"walk",
-    "duration":"4 hours",
-    "distance":"2.5 km",
-    "bestTime":"11am–5pm, any weather",
-    "color":"#8A6BB1",
-    "stops":["map-museum","visvesvaraya-museum","ngma","cubbon-park","koshys"]
-  },
-  {
-    "id":"malleshwaram-tiffin",
-    "title":"Malleshwaram tiffin & tanks",
-    "kicker":"Dosas, a temple and a lake",
-    "note":"A north-Bengaluru morning: two tiffin institutions, an old market, a violin-shaped concert hall and a sunset lake.",
-    "kind":"walk",
-    "duration":"3 hours",
-    "distance":"3 km",
-    "bestTime":"7:30am–11am",
-    "color":"#C99A3F",
-    "stops":["ctr-malleshwaram","veena-stores","malleshwaram-8th-cross","chowdiah","sankey-tank"]
-  },
-  {
-    "id":"indiranagar-crawl",
-    "title":"Indiranagar cafe crawl",
-    "kicker":"Filter coffee to craft beer",
-    "note":"A slow afternoon in the east: podi idli, boutiques, a bookshop and a brewery. Ends at the metro, so you can have the second beer.",
-    "kind":"walk",
-    "duration":"4–5 hours",
-    "distance":"2.5 km",
-    "bestTime":"2pm–8pm",
-    "color":"#B07C4F",
-    "stops":["rameshwaram-cafe","indiranagar-100ft","atta-galatta","toit","indiranagar-metro"]
-  },
-  {
-    "id":"lakes-golden-hour",
-    "title":"Lakes at golden hour",
-    "kicker":"Three sunsets, one evening",
-    "note":"A cab loop from north to central Bengaluru, timed for the light. Pick one lake to linger at; the others are for the drive.",
-    "kind":"cab",
-    "duration":"4 hours",
-    "distance":"18 km",
-    "bestTime":"4:30–8pm",
-    "color":"#4F87A8",
-    "stops":["sankey-tank","hebbal-lake","ulsoor-lake","church-street"]
-  },
-  {
-    "id":"frazer-town-flavours",
-    "title":"Frazer Town flavours",
-    "kicker":"Bakeries, biryani and old bungalows",
-    "note":"A walkable pocket of the cantonment with the city's best khova naan, a late-night roll shop and a proper biryani room.",
-    "kind":"walk",
-    "duration":"3 hours",
-    "distance":"2 km",
-    "bestTime":"5–9pm",
-    "color":"#A26B7C",
-    "stops":["albert-bakery","thoms-bakery","imperial-restaurant","fanoos","savoury","russell-market"]
-  },
-  {
-    "id":"garden-city-green-loop",
-    "title":"Garden city green loop",
-    "kicker":"Lalbagh to Cubbon Park",
-    "note":"Two of the city's great gardens, a rocky park and a market street. A half-day of green with a tiffin stop in the middle.",
-    "kind":"cab",
-    "duration":"4 hours",
-    "distance":"8 km",
-    "bestTime":"7–11am",
-    "color":"#5E8C63",
-    "stops":["lalbagh","bugle-rock","basavanagudi-gandhi-bazaar","cubbon-park"]
-  },
-  {
-    "id":"daytrip-nandi",
-    "title":"Nandi Hills at sunrise",
-    "kicker":"Day trip · 60 km north",
-    "note":"Leave at 4:30am, climb before the sun, then come down for temple stonework and a fort gate. Back in the city by lunch.",
-    "kind":"daytrip",
-    "duration":"7–8 hours",
-    "distance":"120 km round trip",
-    "bestTime":"4:30am–12pm",
-    "color":"#C99A3F",
-    "stops":[
-      {"name":"Nandi Hills","lat":13.3702,"lon":77.6835,"note":"Sunrise above the clouds; go on a weekday if you can."},
-      {"name":"Bhoga Nandeeshwara Temple","lat":13.3860,"lon":77.6790,"note":"A 9th-century temple with exquisite stonework at the foot of the hill."},
-      {"name":"Devanahalli Fort","lat":13.2470,"lon":77.7120,"note":"Tipu Sultan's birthplace, a quiet fort with a grassy moat."}
+    "id": "old-bangalore-morning",
+    "title": "Old Bangalore, early",
+    "kicker": "Temples, dosas and a flower market",
+    "note": "Start before the city wakes. A rock, a temple, two legendary tiffin rooms and the best flower market in India, all within a few kilometres.",
+    "kind": "walk",
+    "duration": "4 hours",
+    "distance": "4 km",
+    "bestTime": "7am–11am",
+    "color": "#C8542D",
+    "stops": [
+      "bugle-rock",
+      "bull-temple",
+      "brahmins-coffee-bar",
+      "vidyarthi-bhavan",
+      "kr-market",
+      "tipu-summer-palace"
     ]
   },
   {
-    "id":"daytrip-mysore",
-    "title":"Mysore in a day",
-    "kicker":"Day trip · 145 km south",
-    "note":"An early start on the expressway, the palace before the crowds, a market walk and a temple on the hill. Long, but worth it.",
-    "kind":"daytrip",
-    "duration":"12–14 hours",
-    "distance":"290 km round trip",
-    "bestTime":"6am–9pm",
-    "color":"#8A6BB1",
-    "stops":[
-      {"name":"Mysore Palace","lat":12.3052,"lon":76.6551,"note":"Go at opening; the durbar hall and the painted ceiling are the highlight."},
-      {"name":"Devaraja Market","lat":12.3070,"lon":76.6540,"note":"Flowers, kumkum and produce in a lovely old market hall."},
-      {"name":"Chamundeshwari Temple","lat":12.2720,"lon":76.6700,"note":"A hilltop temple with a view over the city."},
-      {"name":"Srirangapatna","lat":12.4180,"lon":76.6950,"note":"An island fort town on the way back, with Tipu's summer palace and a river ghat."}
+    "id": "colonial-core",
+    "title": "The colonial core",
+    "kicker": "Cubbon Park to Church Street",
+    "note": "The city's civic heart on foot: a park, a red-brick courthouse, a library, a cathedral and a very old restaurant.",
+    "kind": "walk",
+    "duration": "3–4 hours",
+    "distance": "3.5 km",
+    "bestTime": "8am–noon or 4–7pm",
+    "color": "#2E5B45",
+    "stops": [
+      "cubbon-park",
+      "attara-kacheri",
+      "state-central-library",
+      "vidhana-soudha",
+      "st-marks-cathedral",
+      "koshys",
+      "church-street",
+      "mg-road"
     ]
   },
   {
-    "id":"daytrip-rocks",
-    "title":"Rocks & river country",
-    "kicker":"Day trip · 50–90 km south-west",
-    "note":"Granite hills, a river gorge and a waterfall. Start early; the rocks get hot by noon.",
-    "kind":"daytrip",
-    "duration":"8–9 hours",
-    "distance":"180 km round trip",
-    "bestTime":"6am–4pm",
-    "color":"#C8542D",
-    "stops":[
-      {"name":"Ramanagara","lat":12.7200,"lon":77.2800,"note":"The silk town and the rocky hills behind it; a good first stop for breakfast."},
-      {"name":"Savandurga","lat":12.9200,"lon":77.2900,"note":"One of Asia's largest monoliths; the climb is steep but the view is enormous."},
-      {"name":"Manchanabele Dam","lat":12.8600,"lon":77.3300,"note":"A quiet reservoir below the hills, good for a picnic."},
-      {"name":"Chunchi Falls","lat":12.6000,"lon":77.4300,"note":"A seasonal waterfall on the Arkavathi; check the water before you go."}
+    "id": "museum-mile",
+    "title": "Museum mile, rain or shine",
+    "kicker": "A monsoon-proof afternoon",
+    "note": "When the clouds open, head for the museums. Art, engines, a dinosaur and a quiet garden, with coffee at the end.",
+    "kind": "walk",
+    "duration": "4 hours",
+    "distance": "2.5 km",
+    "bestTime": "11am–5pm, any weather",
+    "color": "#8A6BB1",
+    "stops": [
+      "map-museum",
+      "visvesvaraya-museum",
+      "ngma",
+      "cubbon-park",
+      "koshys"
     ]
   },
   {
-    "id":"daytrip-arts",
-    "title":"Dance villages & silence",
-    "kicker":"Day trip · 30–50 km north-west",
-    "note":"A slower day out: a classical dance village, a meditation pyramid and a spiritual campus. Carry water and an open mind.",
-    "kind":"daytrip",
-    "duration":"7–8 hours",
-    "distance":"100 km round trip",
-    "bestTime":"8am–5pm",
-    "color":"#5E8C63",
-    "stops":[
-      {"name":"Nrityagram","lat":13.1400,"lon":77.4700,"note":"A dance village founded by Protima Bedi; check performance dates before visiting."},
-      {"name":"Pyramid Valley","lat":12.8700,"lon":77.4400,"note":"A meditation centre with a large pyramid and quiet grounds."},
-      {"name":"Art of Living International Center","lat":12.8300,"lon":77.5100,"note":"A vast campus on the Kanakapura Road with gardens and a lake."}
+    "id": "malleshwaram-tiffin",
+    "title": "Malleshwaram tiffin & tanks",
+    "kicker": "Dosas, a temple and a lake",
+    "note": "A north-Bengaluru morning: two tiffin institutions, an old market, a violin-shaped concert hall and a sunset lake.",
+    "kind": "walk",
+    "duration": "3 hours",
+    "distance": "3 km",
+    "bestTime": "7:30am–11am",
+    "color": "#C99A3F",
+    "stops": [
+      "ctr-malleshwaram",
+      "veena-stores",
+      "malleshwaram-8th-cross",
+      "chowdiah",
+      "sankey-tank"
+    ]
+  },
+  {
+    "id": "indiranagar-crawl",
+    "title": "Indiranagar cafe crawl",
+    "kicker": "Filter coffee to craft beer",
+    "note": "A slow afternoon in the east: podi idli, boutiques, a bookshop and a brewery. Ends at Toit, so you can have the second beer.",
+    "kind": "walk",
+    "duration": "4–5 hours",
+    "distance": "2.5 km",
+    "bestTime": "2pm–8pm",
+    "color": "#B07C4F",
+    "stops": [
+      "rameshwaram-cafe",
+      "indiranagar-100ft",
+      "atta-galatta",
+      "toit"
+    ]
+  },
+  {
+    "id": "lakes-golden-hour",
+    "title": "Lakes at golden hour",
+    "kicker": "Three sunsets, one evening",
+    "note": "A cab loop from north to central Bengaluru, timed for the light. Pick one lake to linger at; the others are for the drive.",
+    "kind": "cab",
+    "duration": "4 hours",
+    "distance": "18 km",
+    "bestTime": "4:30–8pm",
+    "color": "#4F87A8",
+    "stops": [
+      "sankey-tank",
+      "hebbal-lake",
+      "ulsoor-lake",
+      "church-street"
+    ]
+  },
+  {
+    "id": "frazer-town-flavours",
+    "title": "Frazer Town flavours",
+    "kicker": "Bakeries, biryani and old bungalows",
+    "note": "A walkable pocket of the cantonment with the city's best khova naan, a late-night roll shop and a proper biryani room.",
+    "kind": "walk",
+    "duration": "3 hours",
+    "distance": "2 km",
+    "bestTime": "5–9pm",
+    "color": "#A26B7C",
+    "stops": [
+      "albert-bakery",
+      "thoms-bakery",
+      "imperial-restaurant",
+      "fanoos",
+      "savoury",
+      "russell-market"
+    ]
+  },
+  {
+    "id": "garden-city-green-loop",
+    "title": "Garden city green loop",
+    "kicker": "Lalbagh to Cubbon Park",
+    "note": "Two of the city's great gardens, a rocky park and a market street. A half-day of green with a tiffin stop in the middle.",
+    "kind": "cab",
+    "duration": "4 hours",
+    "distance": "8 km",
+    "bestTime": "7–11am",
+    "color": "#5E8C63",
+    "stops": [
+      "lalbagh",
+      "bugle-rock",
+      "basavanagudi-gandhi-bazaar",
+      "cubbon-park"
+    ]
+  },
+  {
+    "id": "daytrip-nandi",
+    "title": "Nandi Hills at sunrise",
+    "kicker": "Day trip · 60 km north",
+    "note": "Leave at 4:30am, climb before the sun, then come down for temple stonework and a fort gate. Back in the city by lunch.",
+    "kind": "daytrip",
+    "duration": "7–8 hours",
+    "distance": "120 km round trip",
+    "bestTime": "4:30am–12pm",
+    "color": "#C99A3F",
+    "stops": [
+      {
+        "name": "Nandi Hills",
+        "lat": 13.3702,
+        "lon": 77.6835,
+        "note": "Sunrise above the clouds; go on a weekday if you can."
+      },
+      {
+        "name": "Bhoga Nandeeshwara Temple",
+        "lat": 13.386,
+        "lon": 77.679,
+        "note": "A 9th-century temple with exquisite stonework at the foot of the hill."
+      },
+      {
+        "name": "Devanahalli Fort",
+        "lat": 13.247,
+        "lon": 77.712,
+        "note": "Tipu Sultan's birthplace, a quiet fort with a grassy moat."
+      }
+    ]
+  },
+  {
+    "id": "daytrip-mysore",
+    "title": "Mysore in a day",
+    "kicker": "Day trip · 145 km south",
+    "note": "An early start on the expressway, the palace before the crowds, a market walk and a temple on the hill. Long, but worth it.",
+    "kind": "daytrip",
+    "duration": "12–14 hours",
+    "distance": "290 km round trip",
+    "bestTime": "6am–9pm",
+    "color": "#8A6BB1",
+    "stops": [
+      {
+        "name": "Mysore Palace",
+        "lat": 12.3052,
+        "lon": 76.6551,
+        "note": "Go at opening; the durbar hall and the painted ceiling are the highlight."
+      },
+      {
+        "name": "Devaraja Market",
+        "lat": 12.307,
+        "lon": 76.654,
+        "note": "Flowers, kumkum and produce in a lovely old market hall."
+      },
+      {
+        "name": "Chamundeshwari Temple",
+        "lat": 12.272,
+        "lon": 76.67,
+        "note": "A hilltop temple with a view over the city."
+      },
+      {
+        "name": "Srirangapatna",
+        "lat": 12.418,
+        "lon": 76.695,
+        "note": "An island fort town on the way back, with Tipu's summer palace and a river ghat."
+      }
+    ]
+  },
+  {
+    "id": "daytrip-rocks",
+    "title": "Rocks & river country",
+    "kicker": "Day trip · 50–90 km south-west",
+    "note": "Granite hills, a river gorge and a waterfall. Start early; the rocks get hot by noon.",
+    "kind": "daytrip",
+    "duration": "8–9 hours",
+    "distance": "180 km round trip",
+    "bestTime": "6am–4pm",
+    "color": "#C8542D",
+    "stops": [
+      {
+        "name": "Ramanagara",
+        "lat": 12.72,
+        "lon": 77.28,
+        "note": "The silk town and the rocky hills behind it; a good first stop for breakfast."
+      },
+      {
+        "name": "Savandurga",
+        "lat": 12.92,
+        "lon": 77.29,
+        "note": "One of Asia's largest monoliths; the climb is steep but the view is enormous."
+      },
+      {
+        "name": "Manchanabele Dam",
+        "lat": 12.86,
+        "lon": 77.33,
+        "note": "A quiet reservoir below the hills, good for a picnic."
+      },
+      {
+        "name": "Chunchi Falls",
+        "lat": 12.6,
+        "lon": 77.43,
+        "note": "A seasonal waterfall on the Arkavathi; check the water before you go."
+      }
+    ]
+  },
+  {
+    "id": "daytrip-arts",
+    "title": "Dance villages & silence",
+    "kicker": "Day trip · 30–50 km north-west",
+    "note": "A slower day out: a classical dance village, a meditation pyramid and a spiritual campus. Carry water and an open mind.",
+    "kind": "daytrip",
+    "duration": "7–8 hours",
+    "distance": "100 km round trip",
+    "bestTime": "8am–5pm",
+    "color": "#5E8C63",
+    "stops": [
+      {
+        "name": "Nrityagram",
+        "lat": 13.14,
+        "lon": 77.47,
+        "note": "A dance village founded by Protima Bedi; check performance dates before visiting."
+      },
+      {
+        "name": "Pyramid Valley",
+        "lat": 12.87,
+        "lon": 77.44,
+        "note": "A meditation centre with a large pyramid and quiet grounds."
+      },
+      {
+        "name": "Art of Living International Center",
+        "lat": 12.83,
+        "lon": 77.51,
+        "note": "A vast campus on the Kanakapura Road with gardens and a lake."
+      }
     ]
   }
 ]

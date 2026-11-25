@@ -30,6 +30,10 @@ interface DetailPanelProps {
   originName: string;
   distanceKm: number;
   minutes: number;
+  live?: boolean;
+  traffic?: 'light' | 'moving' | 'heavy' | 'gridlock';
+  kmph?: number;
+  freeKmph?: number;
   saved: boolean;
   visited: boolean;
   onClose: () => void;
@@ -51,6 +55,10 @@ export default function DetailPanel({
   originName,
   distanceKm,
   minutes,
+  live,
+  traffic,
+  kmph,
+  freeKmph,
   saved,
   visited,
   onClose,
@@ -155,13 +163,25 @@ export default function DetailPanel({
               {place.sub}
             </p>
             <h2>{place.name}</h2>
-            <p className="detail-travel">
+            <p className={`detail-travel ${live ? 'is-live' : ''}`}>
               <Navigation size={13} />
               <span>
                 ≈ {minutes} min {modeMeta.label.toLowerCase()} ·{' '}
                 {formatDistance(distanceKm)} from {originName}
               </span>
+              {live && <em className="live-pill">road-routed</em>}
             </p>
+            {traffic && (
+              <p className={`detail-traffic is-${traffic}`}>
+                <i className="live-dot" aria-hidden="true" />
+                Live traffic: {traffic}
+                {kmph
+                  ? ` · ${Math.round(kmph)}${
+                      freeKmph ? ` of ${Math.round(freeKmph)}` : ''
+                    } km/h${freeKmph ? ' free flow' : ' on the nearest corridor'}`
+                  : ''}
+              </p>
+            )}
           </div>
 
           <p className="detail-note">{describePlace(place)}</p>

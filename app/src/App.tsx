@@ -8,7 +8,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import {
-  CATEGORIES,
+  DEFAULT_MINUTES,
   MODE_BY_ID,
   TIME_STOPS,
 } from './lib/catalog';
@@ -19,12 +19,19 @@ import {
   nearestArea,
   reachKm,
 } from './lib/geo';
+import { MOODS, MOOD_BY_ID } from './lib/moods';
 import {
   buildPlaceIndex,
   placeForTrailStop,
   placeHaystack,
   resolvePlaceId,
 } from './lib/places';
+import { cachedRoute, loadOneRoute, loadRouteTable } from './lib/routing';
+import {
+  congestionAt,
+  loadTraffic,
+  type TrafficState,
+} from './lib/traffic';
 import {
   readTheme,
   readSaved,
@@ -35,7 +42,6 @@ import {
 } from './lib/storage';
 import type {
   Atlas,
-  CategoryId,
   Origin,
   Place,
   ResultRow,
@@ -162,12 +168,14 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
   const places = useMemo(() => buildPlaceIndex(atlas), [atlas]);
   const initial = useMemo(() => readInitialState(atlas, places), [atlas, places]);
   const isMobile = useMediaQuery('(max-width: 899px)');
+  const isWide = useMediaQuery('(min-width: 1000px)');
 
   const [origin, setOrigin] = useState<Origin>(initial.origin);
-  const [categories, setCategories] = useState<CategoryId[]>(initial.categories);
+  const [moods, setMoods] = useState<string[]>(initial.moods);
   const [mode, setMode] = useState<TravelMode>(initial.mode);
   const [minutes, setMinutes] = useState(initial.minutes);
   const [query, setQuery] = useState(initial.query);
+  const [traffic, setTraffic] = useState<TrafficState | null>(null);
   const [tab, setTab] = useState<TabId>(initial.trail ? 'trails' : 'places');
   const [selected, setSelected] = useState<Place | null>(initial.place);
   const [trailId, setTrailId] = useState<string | null>(initial.trail?.id ?? null);
@@ -184,22 +192,55 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
   const [toast, setToast] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(48);
   const [sheetExpanded, setSheetExpanded] = useState(false);
+  const [routeTick, setRouteTick] = useState(0);
 
-  const radiusKm = useMemo(() => reachKm(mode, minutes), [mode, minutes]);
+  useEffect(() => {
+    let alive = true;
+    const refresh = () => {
+      loadTraffic().then((state) => {
+        if (alive) setTraffic(state);
+      });
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 10 * 60 * 1000);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const baseRadiusKm = useMemo(() => reachKm(mode, minutes), [mode, minutes]);
+  const originCongestion = useMemo(
+    () => (traffic ? congestionAt(origin, traffic) : null),
+    [traffic, origin],
+  );
+  const driveFactor =
+    mode === 'auto' || mode === 'cab' ? originCongestion?.factor ?? 1 : 1;
+  const radiusKm = baseRadiusKm / driveFactor;
   const trail = useMemo(
     () => atlas.trails.find((candidate) => candidate.id === trailId) || null,
     [atlas.trails, trailId],
   );
 
-  const haystacks = useMemo(
-    () => new Map(atlas.places.map((place) => [place.id, placeHaystack(place)])),
-    [atlas.places],
-  );
+  const { haystacks, moodIndex } = useMemo(() => {
+    const text = new Map<string, string>();
+    const index = new Map<string, string[]>();
+    for (const place of atlas.places) {
+      const hay = placeHaystack(place);
+      text.set(place.id, hay);
+      index.set(
+        place.id,
+        MOODS.filter((mood) => mood.test(place, hay)).map((mood) => mood.id),
+      );
+    }
+    return { haystacks: text, moodIndex: index };
+  }, [atlas.places]);
 
-  const { rows, counts, totalWithin } = useMemo(() => {
-    const nextCounts = Object.fromEntries(
-      CATEGORIES.map((category) => [category.id, 0]),
-    ) as Record<CategoryId, number>;
+  const { rows, moodCounts, totalWithin } = useMemo(() => {
+    const nextMoods = Object.fromEntries(MOODS.map((mood) => [mood.id, 0])) as Record<
+      string,
+      number
+    >;
     const needle = query.trim().toLowerCase();
     const inRange: ResultRow[] = [];
 
@@ -207,7 +248,7 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
       const km = distanceKm(origin, place);
       if (km > radiusKm) continue;
       if (needle && !(haystacks.get(place.id) || '').includes(needle)) continue;
-      nextCounts[place.cat] += 1;
+      for (const id of moodIndex.get(place.id) || []) nextMoods[id] += 1;
       inRange.push({
         place,
         distanceKm: km,
@@ -216,36 +257,130 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
     }
 
     const filtered =
-      categories.length > 0
-        ? inRange.filter((row) => categories.includes(row.place.cat))
+      moods.length > 0
+        ? inRange.filter((row) => {
+            const ids = moodIndex.get(row.place.id) || [];
+            return moods.some((mood) => ids.includes(mood));
+          })
         : inRange;
 
+    const tierRank = (place: Place) =>
+      place.tier === 'editor' ? 3 : place.tier === 'wiki' ? 2 : place.tier === 'atlas' ? 1 : 0;
     filtered.sort(
       (a, b) =>
-        b.place.score - a.place.score || a.distanceKm - b.distanceKm,
+        tierRank(b.place) - tierRank(a.place) ||
+        b.place.score - a.place.score ||
+        a.distanceKm - b.distanceKm,
     );
 
     return {
       rows: filtered,
-      counts: nextCounts,
+      moodCounts: nextMoods,
       totalWithin: inRange.length,
     };
-  }, [atlas.places, origin, radiusKm, mode, query, categories, haystacks]);
+  }, [atlas.places, origin, radiusKm, mode, query, moods, haystacks, moodIndex]);
+
+  // Ask OSRM for real road times on the first screenful, then again whenever
+  // the origin or travel mode changes. The table call costs one request.
+  const candidateKey = useMemo(
+    () => rows.slice(0, 90).map((row) => row.place.id).join('|'),
+    [rows],
+  );
+
+  useEffect(() => {
+    if (!rows.length) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      loadRouteTable(
+        origin,
+        rows.slice(0, 90).map((row) => row.place),
+        mode,
+        controller.signal,
+      ).then((added) => {
+        if (added > 0) setRouteTick((value) => value + 1);
+      });
+    }, 650);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+    // rows is stable between filter changes; candidateKey captures its head.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [origin.lat, origin.lon, mode, candidateKey]);
+
+  // Deep links and map picks may not be in the first table; route them alone.
+  useEffect(() => {
+    if (!selected) return;
+    const controller = new AbortController();
+    loadOneRoute(origin, selected, mode, controller.signal).then((leg) => {
+      if (leg) setRouteTick((value) => value + 1);
+    });
+    return () => controller.abort();
+  }, [selected, origin, mode]);
+
+  const travelAdjusted = useMemo(
+    () =>
+      rows.map((row) => {
+        const leg = cachedRoute(origin, row.place.id, mode);
+        const congestion = traffic ? congestionAt(row.place, traffic) : null;
+        const factor =
+          mode === 'auto' || mode === 'cab' ? congestion?.factor ?? 1 : 1;
+        if (leg) {
+          return {
+            ...row,
+            distanceKm: leg.km || row.distanceKm,
+            minutes: Math.max(1, Math.round(leg.minutes * factor)),
+            live: true,
+            traffic: congestion?.label,
+            kmph: congestion?.kmph,
+            freeKmph: congestion?.corridor?.freeKmph,
+          };
+        }
+        return {
+          ...row,
+          minutes: Math.max(1, Math.round(row.minutes * factor)),
+          live: false,
+          traffic: congestion?.label,
+          kmph: congestion?.kmph,
+          freeKmph: congestion?.corridor?.freeKmph,
+        };
+      }),
+    [rows, origin, mode, traffic, routeTick],
+  );
 
   const visibleRows = useMemo(
-    () => rows.slice(0, visibleCount),
-    [rows, visibleCount],
+    () => travelAdjusted.slice(0, visibleCount),
+    [travelAdjusted, visibleCount],
   );
 
   const selectedRow = useMemo<ResultRow | null>(() => {
     if (!selected) return null;
     const km = distanceKm(origin, selected);
+    const leg = cachedRoute(origin, selected.id, mode);
+    const congestion = traffic ? congestionAt(selected, traffic) : null;
+    const factor =
+      mode === 'auto' || mode === 'cab' ? congestion?.factor ?? 1 : 1;
+    if (leg) {
+      return {
+        place: selected,
+        distanceKm: leg.km || km,
+        minutes: Math.max(1, Math.round(leg.minutes * factor)),
+        live: true,
+        traffic: congestion?.label,
+        kmph: congestion?.kmph,
+        freeKmph: congestion?.corridor?.freeKmph,
+      };
+    }
     return {
       place: selected,
       distanceKm: km,
-      minutes: estimateMinutes(km, mode),
+      minutes: Math.max(1, Math.round(estimateMinutes(km, mode) * factor)),
+      live: false,
+      traffic: congestion?.label,
+      kmph: congestion?.kmph,
+      freeKmph: congestion?.corridor?.freeKmph,
     };
-  }, [selected, origin, mode]);
+  }, [selected, origin, mode, traffic, routeTick]);
 
   const savedRows = useMemo(() => {
     const out: ResultRow[] = [];
@@ -253,10 +388,18 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
       const place = resolvePlaceId(atlas, places, id);
       if (!place) continue;
       const km = distanceKm(origin, place);
-      out.push({ place, distanceKm: km, minutes: estimateMinutes(km, mode) });
+      const factor =
+        (mode === 'auto' || mode === 'cab') && traffic
+          ? congestionAt(place, traffic).factor
+          : 1;
+      out.push({
+        place,
+        distanceKm: km,
+        minutes: Math.max(1, Math.round(estimateMinutes(km, mode) * factor)),
+      });
     }
     return out;
-  }, [saved, atlas, places, origin, mode]);
+  }, [saved, atlas, places, origin, mode, traffic]);
 
   const visitedRows = useMemo(() => {
     const out: ResultRow[] = [];
@@ -264,10 +407,18 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
       const place = resolvePlaceId(atlas, places, id);
       if (!place) continue;
       const km = distanceKm(origin, place);
-      out.push({ place, distanceKm: km, minutes: estimateMinutes(km, mode) });
+      const factor =
+        (mode === 'auto' || mode === 'cab') && traffic
+          ? congestionAt(place, traffic).factor
+          : 1;
+      out.push({
+        place,
+        distanceKm: km,
+        minutes: Math.max(1, Math.round(estimateMinutes(km, mode) * factor)),
+      });
     }
     return out;
-  }, [visited, atlas, places, origin, mode]);
+  }, [visited, atlas, places, origin, mode, traffic]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -289,7 +440,7 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
 
   useEffect(() => {
     setVisibleCount(48);
-  }, [origin, categories, mode, minutes, query]);
+  }, [origin, moods, mode, minutes, query]);
 
   useEffect(() => {
     if (!isMobile) setMobileFilters(false);
@@ -310,7 +461,7 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
   useEffect(() => {
     const queryString = buildQueryString({
       origin,
-      categories,
+      moods,
       mode,
       minutes,
       query,
@@ -319,7 +470,7 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
     });
     const next = `${window.location.pathname}${queryString ? `?${queryString}` : ''}`;
     window.history.replaceState(null, '', next);
-  }, [origin, categories, mode, minutes, query, selected, trailId]);
+  }, [origin, moods, mode, minutes, query, selected, trailId]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -342,7 +493,7 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
   const currentQuery = () =>
     buildShareUrl({
       origin,
-      categories,
+      moods,
       mode,
       minutes,
       query,
@@ -443,11 +594,11 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
     setToast(`Start moved to a pinned point near ${near.name}.`);
   };
 
-  const handleToggleCategory = (category: CategoryId) => {
-    setCategories((current) =>
-      current.includes(category)
-        ? current.filter((value) => value !== category)
-        : [...current, category],
+  const handleToggleMood = (mood: string) => {
+    setMoods((current) =>
+      current.includes(mood)
+        ? current.filter((value) => value !== mood)
+        : [...current, mood],
     );
   };
 
@@ -532,9 +683,9 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
       kind: 'area',
       areaId: home.id,
     });
-    setCategories([]);
+    setMoods([]);
     setMode('auto');
-    setMinutes(15);
+    setMinutes(DEFAULT_MINUTES);
     setQuery('');
     setSelected(null);
     setTrailId(null);
@@ -552,18 +703,19 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
   const filterProps = {
     areas: atlas.areas,
     origin,
-    categories,
+    moods,
     mode,
     minutes,
     radiusKm,
-    counts,
+    moodCounts,
     totalWithin,
     theme,
+    traffic,
     onSelectArea: handleSelectArea,
     onNearMe: handleNearMe,
     onPickMap: handlePickMap,
-    onToggleCategory: handleToggleCategory,
-    onClearCategories: () => setCategories([]),
+    onToggleMood: handleToggleMood,
+    onClearMoods: () => setMoods([]),
     onMode: setMode,
     onMinutes: setMinutes,
   };
@@ -578,13 +730,14 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
       saved={saved}
       visited={visited}
       selectedId={selected?.id ?? null}
-      categoriesActive={categories.length > 0}
+      moodsActive={moods.length > 0}
       canWiden={minutes < TIME_STOPS[TIME_STOPS.length - 1]}
+      liveTimes={travelAdjusted.slice(0, visibleCount).some((row) => row.live)}
       onQuery={setQuery}
       onSelect={(row) => setSelected(row.place)}
       onToggleSave={handleToggleSave}
       onShowMore={() => setVisibleCount((value) => value + 48)}
-      onClearCategories={() => setCategories([])}
+      onClearMoods={() => setMoods([])}
       onWiden={widenWindow}
       onOpenFilters={() => setMobileFilters(true)}
     />
@@ -624,6 +777,25 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
     />
   );
 
+  const panelContent = (
+    <>
+      {tab === 'places' && placesPanel}
+      {tab === 'trails' && trailPanel}
+      {tab === 'saved' && savedPanel}
+    </>
+  );
+
+  const railFooter = (
+    <footer className="rail-footer">
+      <span>
+        © OpenStreetMap · OpenFreeMap · {formatCount(atlas.meta.total)} places
+      </span>
+      <button type="button" className="text-button" onClick={() => setAboutOpen(true)}>
+        Data & credits
+      </button>
+    </footer>
+  );
+
   return (
     <div className="app">
       <Topbar
@@ -640,21 +812,17 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
           <aside className="rail">
             <div className="rail-scroll">
               <FilterPanel {...filterProps} />
-              {tabBar}
-              <div className="rail-content">
-                {tab === 'places' && placesPanel}
-                {tab === 'trails' && trailPanel}
-                {tab === 'saved' && savedPanel}
-              </div>
-              <footer className="rail-footer">
-                <span>
-                  © OpenStreetMap · OpenFreeMap · {formatCount(atlas.meta.total)} places
-                </span>
-                <button type="button" className="text-button" onClick={() => setAboutOpen(true)}>
-                  Data & credits
-                </button>
-              </footer>
+              {!isWide && tabBar}
+              {!isWide && <div className="rail-content">{panelContent}</div>}
+              {railFooter}
             </div>
+          </aside>
+        )}
+
+        {!isMobile && isWide && (
+          <aside className="results-rail" aria-label="Places, trails and saved">
+            {tabBar}
+            <div className="results-scroll">{panelContent}</div>
           </aside>
         )}
 
@@ -667,6 +835,7 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
             selected={selected}
             trail={trail}
             theme={theme}
+            traffic={traffic}
             pickMode={pickMode}
             onSelectPlace={setSelected}
             onSelectArea={handleSelectArea}
@@ -718,6 +887,10 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
               originName={origin.name}
               distanceKm={selectedRow.distanceKm}
               minutes={selectedRow.minutes}
+              live={selectedRow.live}
+              traffic={selectedRow.traffic}
+              kmph={selectedRow.kmph}
+              freeKmph={selectedRow.freeKmph}
               saved={saved.has(selected.id)}
               visited={visited.has(selected.id)}
               onClose={() => setSelected(null)}

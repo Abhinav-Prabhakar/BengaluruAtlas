@@ -11,6 +11,11 @@ import {
   type LineFeature,
   type PointFeature,
 } from '../lib/geo';
+import {
+  corridorFactor,
+  corridorTone,
+  type TrafficState,
+} from '../lib/traffic';
 import type {
   Area,
   CategoryId,
@@ -30,6 +35,7 @@ interface MapCanvasProps {
   selected: Place | null;
   trail: Trail | null;
   theme: Theme;
+  traffic: TrafficState | null;
   pickMode: boolean;
   onSelectPlace: (place: Place) => void;
   onSelectArea: (area: Area) => void;
@@ -442,6 +448,7 @@ export default function MapCanvas({
   selected,
   trail,
   theme,
+  traffic,
   pickMode,
   onSelectPlace,
   onSelectArea,
@@ -558,6 +565,23 @@ export default function MapCanvas({
       ),
     [trail],
   );
+
+  const trafficGeo = useMemo<FeatureCollection<LineFeature>>(() => {
+    if (!traffic?.model) return collection([]);
+    return collection(
+      traffic.model.corridors.map((corridor) => ({
+        type: 'Feature' as const,
+        properties: {
+          tone: corridorTone(corridorFactor(corridor, traffic)),
+          name: corridor.name,
+        },
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: corridor.path,
+        },
+      })),
+    );
+  }, [traffic]);
 
   const palette = useMemo(() => paletteFor(theme), [theme]);
 
@@ -762,6 +786,75 @@ export default function MapCanvas({
     line?.setData(stateRef.current.trailLine as never);
     stops?.setData(stateRef.current.trailStops as never);
   }, [trailLine, trailStops, ready]);
+
+  const shownTrailRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    if (trail && trail.stops.length > 0) {
+      const bounds = new maplibregl.LngLatBounds();
+      for (const stop of trail.stops) bounds.extend([stop.lon, stop.lat]);
+      map.fitBounds(bounds, {
+        padding: { top: 96, bottom: 96, left: 72, right: 72 },
+        maxZoom: 14.6,
+        duration: 750,
+      });
+    } else if (shownTrailRef.current) {
+      map.easeTo({ center: [origin.lon, origin.lat], zoom: 13.2, duration: 650 });
+    }
+    shownTrailRef.current = trail?.id ?? null;
+  }, [trail, ready, origin.lon, origin.lat]);
+
+  // Live congestion ribbons, drawn under the pins so they read as road texture.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const before = map.getLayer('radius-fill') ? 'radius-fill' : undefined;
+    if (!map.getSource('traffic')) {
+      map.addSource('traffic', { type: 'geojson', data: trafficGeo });
+    }
+    if (!map.getLayer('traffic-glow')) {
+      map.addLayer(
+        {
+          id: 'traffic-glow',
+          type: 'line',
+          source: 'traffic',
+          layout: { 'line-cap': 'round', 'line-join': 'round', visibility: traffic ? 'visible' : 'none' },
+          paint: {
+            'line-color': ['get', 'tone'],
+            'line-width': ['interpolate', ['linear'], ['zoom'], 10, 6, 14, 14],
+            'line-opacity': 0.16,
+            'line-blur': 4,
+          },
+        },
+        before,
+      );
+    }
+    if (!map.getLayer('traffic-line')) {
+      map.addLayer(
+        {
+          id: 'traffic-line',
+          type: 'line',
+          source: 'traffic',
+          layout: { 'line-cap': 'round', 'line-join': 'round', visibility: traffic ? 'visible' : 'none' },
+          paint: {
+            'line-color': ['get', 'tone'],
+            'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1.6, 14, 4.4],
+            'line-opacity': 0.72,
+          },
+        },
+        before,
+      );
+    }
+    const source = map.getSource('traffic') as GeoJSONSource | undefined;
+    source?.setData(trafficGeo as never);
+    for (const id of ['traffic-glow', 'traffic-line']) {
+      if (map.getLayer(id)) {
+        map.setLayoutProperty(id, 'visibility', traffic ? 'visible' : 'none');
+      }
+    }
+  }, [trafficGeo, traffic, ready]);
 
   useEffect(() => {
     const map = mapRef.current;
