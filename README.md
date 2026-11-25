@@ -5,27 +5,11 @@
 
   <p>
     <a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/"><img src="https://img.shields.io/badge/OPEN_THE_ATLAS-LIVE-15251B?style=for-the-badge&logo=githubpages&logoColor=EFE7D6" alt="Open the live atlas"></a>
-    <a href="https://github.com/Abhinav-Prabhakar/BengaluruAtlas"><img src="https://img.shields.io/badge/SOURCE-GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="Source on GitHub"></a>
-    <img src="https://img.shields.io/badge/PWA-INSTALLABLE-2E5A45?style=for-the-badge" alt="Installable PWA">
-    <img src="https://img.shields.io/badge/OFFLINE-READY-2E5A45?style=for-the-badge" alt="Offline ready">
-    <img src="https://img.shields.io/badge/API_KEYS-0-D96C47?style=for-the-badge" alt="No API keys">
-  </p>
-
-  <p>
     <img src="https://img.shields.io/badge/React-19-1B3A2A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React 19">
     <img src="https://img.shields.io/badge/TypeScript-5.9-1B3A2A?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 5.9">
-    <img src="https://img.shields.io/badge/Vite-7-1B3A2A?style=for-the-badge&logo=vite&logoColor=FFD62E" alt="Vite 7">
     <img src="https://img.shields.io/badge/MapLibre_GL-5-1B3A2A?style=for-the-badge&logo=maplibre&logoColor=white" alt="MapLibre GL">
-    <img src="https://img.shields.io/badge/OSRM-ROUTING-1B3A2A?style=for-the-badge&logo=openstreetmap&logoColor=white" alt="OSRM routing">
-  </p>
-
-  <p>
-    <img src="https://img.shields.io/badge/9,362-PLACES-15251B?style=flat-square" alt="9,362 places">
-    <img src="https://img.shields.io/badge/206-TRAILS-15251B?style=flat-square" alt="206 trails">
-    <img src="https://img.shields.io/badge/37-MOODS-15251B?style=flat-square" alt="37 moods">
-    <img src="https://img.shields.io/badge/13-LIVE_CORRIDORS-15251B?style=flat-square" alt="13 live traffic corridors">
-    <img src="https://img.shields.io/badge/LICENSE-MIT-D96C47?style=flat-square" alt="MIT license">
-    <img src="https://img.shields.io/badge/MADE_IN-BENGALURU-D96C47?style=flat-square" alt="Made in Bengaluru">
+    <img src="https://img.shields.io/badge/PWA-INSTALLABLE-2E5A45?style=for-the-badge" alt="Installable PWA">
+    <img src="https://img.shields.io/badge/LICENSE-MIT-D96C47?style=for-the-badge" alt="MIT license">
   </p>
 
   <br/>
