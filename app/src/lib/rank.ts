@@ -35,6 +35,7 @@ function scoreBoost(score: number): number {
 }
 
 export interface RankOptions {
+  /** Rain is falling now or expected within the hour or so. */
   raining: boolean;
   /** True in the dry window before sunset. */
   golden?: boolean;

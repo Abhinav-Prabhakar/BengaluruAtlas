@@ -28,21 +28,47 @@ export interface RouteLeg {
   stale?: boolean;
 }
 
+interface OriginCell {
+  lat: number;
+  lon: number;
+  /** Last time this neighbourhood was used, for pruning. */
+  at: number;
+}
+
 const cache = new Map<string, RouteLeg>();
 const inFlight = new Set<string>();
 const TTL = 20 * 60 * 1000;
 const STALE_TTL = 24 * 60 * 60 * 1000;
-const STORE_KEY = 'bengaluru-atlas:routes:v1';
+const STORE_KEY = 'bengaluru-atlas:routes:v2';
+const LEGACY_STORE_KEY = 'bengaluru-atlas:routes:v1';
 const COOLDOWN_KEY = 'bengaluru-atlas:routing-cooldown:v1';
 const RATE_LIMIT_MS = 12 * 60 * 1000;
 const SERVER_ERROR_MS = 90 * 1000;
 const NETWORK_ERROR_MS = 45 * 1000;
 const MAX_STORED = 800;
 
+/**
+ * Reuse a route fetched from a nearby origin instead of treating every small
+ * map nudge as a new place. A cell is roughly a city block; legs from the same
+ * cell are close enough that the travel-time order does not change.
+ */
+const ORIGIN_MERGE_M = 150;
+const ORIGIN_DECIMALS = 3;
+const CELL_CAP = 120;
+
+/** Room for every mode, even when one is used heavily. Extras fill spare space. */
+const MODE_QUOTA: Record<string, number> = {
+  car: 360,
+  walk: 240,
+  bike: 200,
+};
+
 let hydrated = false;
 let persistTimer: number | null = null;
 let blockedUntil = 0;
 let blockedReason = '';
+let cells: OriginCell[] = [];
+const originKeyMemo = new Map<string, string>();
 
 function hydrate(): void {
   if (hydrated) return;
@@ -52,6 +78,7 @@ function hydrate(): void {
     if (raw) {
       const parsed = JSON.parse(raw) as {
         legs?: Record<string, RouteLeg>;
+        cells?: OriginCell[];
       } | null;
       if (parsed?.legs) {
         const now = Date.now();
@@ -62,7 +89,21 @@ function hydrate(): void {
           if (!cache.has(key)) cache.set(key, leg);
         }
       }
+      if (Array.isArray(parsed?.cells)) {
+        cells = parsed.cells
+          .filter(
+            (cell) =>
+              cell &&
+              typeof cell.lat === 'number' &&
+              typeof cell.lon === 'number' &&
+              typeof cell.at === 'number',
+          )
+          .slice(0, CELL_CAP);
+      }
     }
+    // The old store keyed every origin to four decimals. It cannot be reused
+    // with neighbourhood cells, so reclaim the space.
+    window.localStorage.removeItem(LEGACY_STORE_KEY);
   } catch {
     try {
       window.localStorage.removeItem(STORE_KEY);
@@ -128,6 +169,57 @@ function noteFailure(response: Response): void {
   if (response.status >= 500) setCooldown(SERVER_ERROR_MS, 'server');
 }
 
+function metresBetween(a: LatLon, b: LatLon): number {
+  const dLat = (a.lat - b.lat) * 111_320;
+  const dLon =
+    (a.lon - b.lon) * 111_320 * Math.cos((a.lat * Math.PI) / 180);
+  return Math.hypot(dLat, dLon);
+}
+
+/** The stable neighbourhood key for an origin, merging cells within 150 m. */
+function originKey(origin: LatLon): string {
+  hydrate();
+  const memoKey = `${origin.lat.toFixed(5)}|${origin.lon.toFixed(5)}`;
+  const memo = originKeyMemo.get(memoKey);
+  if (memo) return memo;
+
+  let nearest: OriginCell | null = null;
+  let nearestMetres = Infinity;
+  for (const cell of cells) {
+    const metres = metresBetween(origin, cell);
+    if (metres < nearestMetres) {
+      nearest = cell;
+      nearestMetres = metres;
+    }
+  }
+
+  let cell: OriginCell;
+  if (nearest && nearestMetres <= ORIGIN_MERGE_M) {
+    cell = nearest;
+    cell.at = Date.now();
+  } else {
+    cell = {
+      lat: Number(origin.lat.toFixed(ORIGIN_DECIMALS)),
+      lon: Number(origin.lon.toFixed(ORIGIN_DECIMALS)),
+      at: Date.now(),
+    };
+    cells.push(cell);
+    if (cells.length > CELL_CAP) {
+      cells.sort((a, b) => b.at - a.at);
+      cells = cells.slice(0, CELL_CAP);
+    }
+  }
+
+  const key = `${cell.lat.toFixed(ORIGIN_DECIMALS)}|${cell.lon.toFixed(ORIGIN_DECIMALS)}`;
+  originKeyMemo.set(memoKey, key);
+  return key;
+}
+
+/** Auto and cab share the same OSRM profile and the same road time. */
+function cacheMode(mode: TravelMode): string {
+  return mode === 'walk' ? 'walk' : mode === 'bike' ? 'bike' : 'car';
+}
+
 function persist(): void {
   if (persistTimer != null) return;
   persistTimer = -1;
@@ -135,14 +227,44 @@ function persist(): void {
     persistTimer = null;
     try {
       const now = Date.now();
-      const entries = [...cache.entries()]
+      const groups = new Map<string, Array<[string, RouteLeg]>>();
+      for (const entry of cache.entries()) {
+        const [, leg] = entry;
         // Keep day-old legs: they are the fallback when OSRM is resting.
-        .filter(([, leg]) => now - leg.at <= STALE_TTL)
-        .sort((a, b) => b[1].at - a[1].at)
-        .slice(0, MAX_STORED);
+        if (now - leg.at > STALE_TTL) continue;
+        const mode = entry[0].slice(0, entry[0].indexOf('|'));
+        const group = groups.get(mode);
+        if (group) group.push(entry);
+        else groups.set(mode, [entry]);
+      }
+
+      const kept: Array<[string, RouteLeg]> = [];
+      const overflow: Array<[string, RouteLeg]> = [];
+      for (const [mode, group] of groups) {
+        group.sort((a, b) => b[1].at - a[1].at);
+        const quota = MODE_QUOTA[mode] ?? 200;
+        kept.push(...group.slice(0, quota));
+        overflow.push(...group.slice(quota));
+      }
+      // If every mode is busy, the quotas are the whole story. Otherwise use
+      // the spare room for the newest overflow.
+      overflow.sort((a, b) => b[1].at - a[1].at);
+      const entries =
+        kept.length >= MAX_STORED
+          ? kept.sort((a, b) => b[1].at - a[1].at).slice(0, MAX_STORED)
+          : [...kept, ...overflow]
+              .sort((a, b) => b[1].at - a[1].at)
+              .slice(0, MAX_STORED);
+
       const legs: Record<string, RouteLeg> = {};
       for (const [key, leg] of entries) legs[key] = leg;
-      window.localStorage.setItem(STORE_KEY, JSON.stringify({ at: now, legs }));
+      const storedCells = [...cells]
+        .sort((a, b) => b.at - a.at)
+        .slice(0, CELL_CAP);
+      window.localStorage.setItem(
+        STORE_KEY,
+        JSON.stringify({ at: now, legs, cells: storedCells }),
+      );
     } catch {
       /* a full or disabled store should never break routing */
     }
@@ -158,7 +280,7 @@ function persist(): void {
 }
 
 function keyOf(origin: LatLon, placeId: string, mode: TravelMode): string {
-  return `${mode}|${origin.lat.toFixed(4)}|${origin.lon.toFixed(4)}|${placeId}`;
+  return `${cacheMode(mode)}|${originKey(origin)}|${placeId}`;
 }
 
 /**

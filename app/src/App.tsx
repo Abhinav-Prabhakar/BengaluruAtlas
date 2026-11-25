@@ -38,7 +38,7 @@ import {
   loadTraffic,
   type TrafficState,
 } from './lib/traffic';
-import { isRainCode, loadWeather, sunsetMinute } from './lib/weather';
+import { formatClock, loadWeather, sunsetMinute } from './lib/weather';
 import {
   readThemePref,
   readSaved,
@@ -275,9 +275,11 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
   }, []);
 
   const raining = Boolean(
-    weather && (isRainCode(weather.code) || weather.rainChance >= 55),
+    weather && (weather.rainNow || weather.rainSoonChance >= 55),
   );
   const golden = Boolean(weather?.golden && !raining);
+  const rainLater =
+    !raining && weather?.rainLaterAt ? formatClock(weather.rainLaterAt) : null;
   const sunset = weather ? sunsetMinute(weather) : null;
   const nowMinutes = istClock().minutes;
 
@@ -1125,6 +1127,8 @@ function AtlasExperience({ atlas }: { atlas: Atlas }) {
               freeKmph={selectedRow.freeKmph}
               arrival={selectedRow.arrival}
               sunsetMinute={raining ? null : sunset}
+              rainLaterLabel={rainLater}
+              rainLaterMinute={raining ? null : weather?.rainLaterMinute ?? null}
               nowMinute={nowMinutes}
               onTheWay={onTheWay}
               saved={saved.has(selected.id)}

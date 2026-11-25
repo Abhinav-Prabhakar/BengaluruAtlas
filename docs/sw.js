@@ -6,7 +6,7 @@
  * so the last city you looked at survives a dead signal.
  */
 
-const VERSION = "mww0b6j2";
+const VERSION = "mww10ipm";
 const PRECACHE = [
   "./index.html",
   "./site.webmanifest",
@@ -24,8 +24,8 @@ const PRECACHE = [
   "./assets/fraunces-0vNsIEPK.woff2",
   "./assets/jetbrains-mono-BdOwYlYc.woff2",
   "./assets/manrope-ubYmXSK8.woff2",
-  "./assets/index-Dy1lY2BK.css",
-  "./assets/index-B1KVf8e9.js"
+  "./assets/index-jD_XsEFY.css",
+  "./assets/index-CKDIMGrt.js"
 ];
 
 const SCOPE = self.registration.scope;

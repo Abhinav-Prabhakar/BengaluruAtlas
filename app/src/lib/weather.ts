@@ -6,7 +6,7 @@ const WEATHER_URL =
   '&hourly=precipitation_probability' +
   '&daily=sunset&timezone=Asia%2FKolkata&forecast_days=1';
 
-const CACHE_KEY = 'bengaluru-atlas:weather:v1';
+const CACHE_KEY = 'bengaluru-atlas:weather:v2';
 const MAX_AGE_MS = 10 * 60 * 1000;
 
 interface CachedWeather {
@@ -123,7 +123,11 @@ async function fetchWeather(): Promise<WeatherNow | null> {
     const response = await fetch(WEATHER_URL);
     if (!response.ok) return null;
     const payload = (await response.json()) as {
-      current?: { temperature_2m?: number; weather_code?: number };
+      current?: {
+        temperature_2m?: number;
+        precipitation?: number;
+        weather_code?: number;
+      };
       hourly?: { time?: string[]; precipitation_probability?: (number | null)[] };
       daily?: { sunset?: string[] };
     };
@@ -131,30 +135,59 @@ async function fetchWeather(): Promise<WeatherNow | null> {
     if (!current || typeof current.temperature_2m !== 'number') return null;
 
     const { isoHour, minutes } = istParts();
+    const code = current.weather_code ?? 0;
     const hourly = payload.hourly;
     const times = hourly?.time || [];
     const probabilities = hourly?.precipitation_probability || [];
     let index = times.findIndex((time) => time >= isoHour);
     if (index < 0) index = 0;
-    const rainChance = Math.max(
+
+    const chance = (offset: number) => {
+      const value = probabilities[index + offset];
+      return typeof value === 'number' ? value : 0;
+    };
+    // The current hour and the next one are "now"; anything after that is a
+    // later shower. The distinction keeps a dry afternoon from losing its
+    // parks four hours before the rain.
+    const rainSoonChance = Math.max(0, chance(0), chance(1));
+    const later = probabilities.slice(index + 2, index + 7);
+    const rainLaterChance = Math.max(
       0,
-      ...probabilities
-        .slice(index, index + 4)
-        .map((probability) => (typeof probability === 'number' ? probability : 0)),
+      ...later.map((value) => (typeof value === 'number' ? value : 0)),
     );
+    const laterOffset = later.findIndex(
+      (value) => typeof value === 'number' && value >= 55,
+    );
+    const rainLaterAt =
+      laterOffset >= 0 ? times[index + 2 + laterOffset] ?? null : null;
+    const rainLaterMinute = rainLaterAt
+      ? minutesFromClock(rainLaterAt)
+      : null;
+    const rainChance = Math.max(rainSoonChance, rainLaterChance);
+    const rainNow =
+      isRainCode(code) || (current.precipitation ?? 0) > 0;
 
     const sunsetRaw = payload.daily?.sunset?.[0] || '';
     const sunsetMinutes = sunsetRaw ? minutesFromClock(sunsetRaw) : 0;
     const golden =
-      sunsetMinutes > 0 && minutes >= sunsetMinutes - 50 && minutes <= sunsetMinutes;
+      sunsetMinutes > 0 &&
+      minutes >= sunsetMinutes - 50 &&
+      minutes <= sunsetMinutes &&
+      !rainNow &&
+      rainSoonChance < 55;
 
     const weather: WeatherNow = {
       temp: Math.round(current.temperature_2m),
-      code: current.weather_code ?? 0,
+      code,
       rainChance: Math.round(rainChance),
+      rainSoonChance: Math.round(rainSoonChance),
+      rainLaterChance: Math.round(rainLaterChance),
+      rainLaterAt,
+      rainLaterMinute,
+      rainNow,
       sunset: sunsetRaw,
       golden,
-      label: wmoLabel(current.weather_code ?? 0),
+      label: wmoLabel(code),
     };
     writeCache(weather);
     return weather;

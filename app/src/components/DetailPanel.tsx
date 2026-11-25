@@ -5,6 +5,7 @@ import {
   CarFront,
   Check,
   Clock3,
+  CloudRain,
   ExternalLink,
   Globe2,
   MapPin,
@@ -41,6 +42,8 @@ interface DetailPanelProps {
   freeKmph?: number;
   arrival?: ArrivalInfo | null;
   sunsetMinute?: number | null;
+  rainLaterLabel?: string | null;
+  rainLaterMinute?: number | null;
   nowMinute?: number;
   onTheWay?: Array<{ place: Place; extraMinutes: number }>;
   saved: boolean;
@@ -70,6 +73,8 @@ export default function DetailPanel({
   freeKmph,
   arrival,
   sunsetMinute,
+  rainLaterLabel,
+  rainLaterMinute,
   nowMinute,
   onTheWay = [],
   saved,
@@ -107,6 +112,18 @@ export default function DetailPanel({
     'https://m.uber.com/ul/?action=setPickup&pickup=my_location' +
     `&dropoff[latitude]=${place.lat}&dropoff[longitude]=${place.lon}` +
     `&dropoff[nickname]=${encodeURIComponent(place.name)}`;
+
+  // A shower after closing time is not a reason to rush. Only mention rain
+  // that lands while the place is still open.
+  const rainLaterRelevant =
+    Boolean(rainLaterLabel) &&
+    rainLaterMinute != null &&
+    nowMinute != null &&
+    rainLaterMinute > nowMinute &&
+    arrival?.state !== 'closed' &&
+    (arrival?.closesAt == null || rainLaterMinute <= arrival.closesAt) &&
+    (place.cat === 'outdoors' ||
+      place.tags?.includes('outdoor seating'));
 
   const sunsetNote =
     place.cat === 'outdoors' &&
@@ -257,6 +274,14 @@ export default function DetailPanel({
               <p className="detail-sunset">
                 <Sunset size={12} />
                 <span>{sunsetNote}</span>
+              </p>
+            )}
+            {rainLaterRelevant && (
+              <p className="detail-rain">
+                <CloudRain size={12} />
+                <span>
+                  Rain likely after {rainLaterLabel} — go earlier if you can.
+                </span>
               </p>
             )}
             {onTheWay.length > 0 && (

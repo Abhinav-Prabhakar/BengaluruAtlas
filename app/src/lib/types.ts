@@ -141,7 +141,18 @@ export interface ResultRow {
 export interface WeatherNow {
   temp: number;
   code: number;
+  /** Highest rain chance over the next few hours, used by the weather chip. */
   rainChance: number;
+  /** Rain chance for the current hour and the next one. */
+  rainSoonChance: number;
+  /** Highest rain chance after the soon window. */
+  rainLaterChance: number;
+  /** First later hour with a likely shower, as an ISO-ish timestamp. */
+  rainLaterAt: string | null;
+  /** Same moment as minutes since midnight, for quiet comparisons. */
+  rainLaterMinute: number | null;
+  /** Rain is falling now, or the current code says it is. */
+  rainNow: boolean;
   sunset: string;
   golden: boolean;
   label: string;

@@ -4177,6 +4177,7 @@ a {
 
 .detail-hours,
 .detail-sunset,
+.detail-rain,
 .detail-onway {
   display: flex;
   align-items: flex-start;
@@ -4190,6 +4191,7 @@ a {
 
 .detail-hours svg,
 .detail-sunset svg,
+.detail-rain svg,
 .detail-onway svg {
   flex: none;
   margin-top: 1px;
@@ -4205,6 +4207,10 @@ a {
 
 .detail-sunset {
   color: #9A6B2F;
+}
+
+.detail-rain {
+  color: #5B7280;
 }
 
 .detail-onway svg {

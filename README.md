@@ -1,48 +1,55 @@
 <div align="center">
-  <img src="./app/public/icon-192.png" width="76" alt="Bengaluru Atlas" />
+  <img src="./app/public/icon-192.png" width="84" alt="Bengaluru Atlas" />
   <h1>Bengaluru Atlas</h1>
-  <p><em>A field guide to the city, sorted by how far you’ll actually go.</em></p>
+  <p><em>9,362 places. 206 trails. One travel-time dial.</em></p>
+
   <p>
-    <a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/"><img src="https://img.shields.io/badge/Open_the_atlas-live-15251B?style=for-the-badge&logo=githubpages&logoColor=EFE7D6" alt="Open the live atlas"></a>
-    <img src="https://img.shields.io/badge/React-19-1B3A2A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React 19">
-    <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
-    <img src="https://img.shields.io/badge/MapLibre_GL-5.9-295DAA?style=for-the-badge" alt="MapLibre GL">
-    <img src="https://img.shields.io/badge/License-MIT-D96C47?style=for-the-badge" alt="MIT License">
+    <a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/"><img src="https://img.shields.io/badge/OPEN_THE_ATLAS-LIVE-15251B?style=for-the-badge&logo=githubpages&logoColor=EFE7D6" alt="Open the live atlas"></a>
+    <a href="https://github.com/Abhinav-Prabhakar/BengaluruAtlas"><img src="https://img.shields.io/badge/SOURCE-GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="Source on GitHub"></a>
+    <img src="https://img.shields.io/badge/PWA-INSTALLABLE-2E5A45?style=for-the-badge" alt="Installable PWA">
+    <img src="https://img.shields.io/badge/OFFLINE-READY-2E5A45?style=for-the-badge" alt="Offline ready">
+    <img src="https://img.shields.io/badge/API_KEYS-0-D96C47?style=for-the-badge" alt="No API keys">
   </p>
-  <p><strong>Bengaluru, inside out.</strong> Pick a corner. Pick a mood. Pick how far you’ll go.<br/>
-  Then let the map do the arguing.</p>
+
+  <p>
+    <img src="https://img.shields.io/badge/React-19-1B3A2A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React 19">
+    <img src="https://img.shields.io/badge/TypeScript-5.9-1B3A2A?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 5.9">
+    <img src="https://img.shields.io/badge/Vite-7-1B3A2A?style=for-the-badge&logo=vite&logoColor=FFD62E" alt="Vite 7">
+    <img src="https://img.shields.io/badge/MapLibre_GL-5-1B3A2A?style=for-the-badge&logo=maplibre&logoColor=white" alt="MapLibre GL">
+    <img src="https://img.shields.io/badge/OSRM-ROUTING-1B3A2A?style=for-the-badge&logo=openstreetmap&logoColor=white" alt="OSRM routing">
+  </p>
+
+  <p>
+    <img src="https://img.shields.io/badge/9,362-PLACES-15251B?style=flat-square" alt="9,362 places">
+    <img src="https://img.shields.io/badge/206-TRAILS-15251B?style=flat-square" alt="206 trails">
+    <img src="https://img.shields.io/badge/37-MOODS-15251B?style=flat-square" alt="37 moods">
+    <img src="https://img.shields.io/badge/13-LIVE_CORRIDORS-15251B?style=flat-square" alt="13 live traffic corridors">
+    <img src="https://img.shields.io/badge/LICENSE-MIT-D96C47?style=flat-square" alt="MIT license">
+    <img src="https://img.shields.io/badge/MADE_IN-BENGALURU-D96C47?style=flat-square" alt="Made in Bengaluru">
+  </p>
+
+  <br/>
+
+  <a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/">
+    <img src="./assets/readme/hero-light.webp" alt="Bengaluru Atlas on desktop: live traffic ribbons on the map, place cards with photos, and 37 moods in the filter rail" />
+  </a>
+
+  <sub>MG Road · 20 minutes by auto · the list follows the road, not the radius.</sub>
 </div>
-
-<br/>
-
-<a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/">
-  <img src="./assets/readme/hero-light.webp" alt="Bengaluru Atlas on desktop: live traffic ribbons on the map, place cards with photos, and 37 moods in the filter rail" />
-</a>
-
-<div align="center"><sub>MG Road · 20 minutes by auto · 800+ places in reach · 13 corridors of live traffic.</sub></div>
-
-<br/>
-
-<table>
-<tr>
-<td align="center" width="33%"><h3>Pick a corner</h3><p>53 neighbourhoods, from Chickpet to Whitefield. Or drop a pin anywhere.</p></td>
-<td align="center" width="33%"><h3>Name a mood</h3><p>37 moods — tiffin, Chinese, lakes, bookshops, temples, bars, breweries, sunsets, stays.</p></td>
-<td align="center" width="33%"><h3>Set a window</h3><p>Walk, cycle, auto or cab. Five minutes to an hour, with live traffic on the roads.</p></td>
-</tr>
-</table>
 
 <br/>
 
 <div align="center">
   <h3>One dial. The whole city.</h3>
-  <sub>Five minutes to sixty. The circle grows, the list follows — and the clock is traffic-aware.</sub>
+  <sub>Five minutes to sixty. The circle grows, the list reorders, the clock does the arguing.</sub>
 </div>
 
-<a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/">
-  <img src="./assets/readme/reach.gif" alt="The travel-time dial expanding as the map radius and place count grow" />
-</a>
+<p align="center">
+  <a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/">
+    <img src="./assets/readme/reach.gif" width="88%" alt="The travel-time dial expanding as the map radius and place count grow" />
+  </a>
+</p>
 
-<br/>
 <br/>
 
 <table>
@@ -51,36 +58,48 @@
   <img src="./assets/readme/hero-dark.webp" alt="Bengaluru Atlas in dark mode" />
 </td>
 <td width="50%">
-  <img src="./assets/readme/trail.webp" alt="A walking trail drawn across old Bangalore, with its stops listed in the rail" />
+  <img src="./assets/readme/time-aware.webp" alt="Cubbon Park detail with sunset timing and a rain-later note" />
 </td>
 </tr>
 <tr>
-<td align="center"><sub><strong>Dark mode, drawn —</strong> not inverted. A second hand-tuned map style.</sub></td>
-<td align="center"><sub><strong>206 trails.</strong> City walks, food crawls, temple runs and day trips — searchable, filterable, and fitted to the map.</sub></td>
+<td align="center"><sub><strong>Dark mode, drawn —</strong> a second hand-tuned map style.</sub></td>
+<td align="center"><sub><strong>Time-aware details —</strong> leave by sunset; rain later stays out of the order.</sub></td>
+</tr>
+<tr>
+<td width="50%">
+  <img src="./assets/readme/trail.webp" alt="A walking trail drawn across old Bangalore, with its stops listed in the rail" />
+</td>
+<td width="50%">
+  <img src="./assets/readme/discover.webp" alt="Coffee places within 30 minutes of Church Street, shown across central Bengaluru" />
+</td>
+</tr>
+<tr>
+<td align="center"><sub><strong>206 trails.</strong> Walks, crawls, temple runs and day trips.</sub></td>
+<td align="center"><sub><strong>Church Street · 30 minutes ·</strong> filter coffee only.</sub></td>
 </tr>
 </table>
 
 <br/>
 
-<a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/?area=church-street&mood=coffee&time=30">
-  <img src="./assets/readme/discover.webp" alt="Coffee places within 30 minutes of Church Street, shown across central Bengaluru" />
-</a>
-
-<div align="center"><sub>Church Street · 30 minutes · filter coffee only · ordered by what’s worth the trip.</sub></div>
-
-<br/>
-<br/>
-
 <div align="center">
   <h3>And it fits in a pocket.</h3>
-  <sub>Full map, full list, full detail sheet. Nothing watered down.</sub>
+  <sub>Full map, full list, full detail sheet. Installable, offline-ready, no app store.</sub>
 </div>
 
 <p align="center">
-  <img src="./assets/readme/mobile-discover.webp" width="24%" alt="Mobile map and place list" />
-  <img src="./assets/readme/mobile-detail.webp" width="24%" alt="Cubbon Park detail sheet on mobile" />
-  <img src="./assets/readme/mobile-filters.webp" width="24%" alt="Mobile filter sheet with travel time and categories" />
+  <img src="./assets/readme/mobile-discover.webp" width="23%" alt="Mobile map and place list" />
+  <img src="./assets/readme/mobile-detail.webp" width="23%" alt="Cubbon Park detail sheet on mobile" />
+  <img src="./assets/readme/mobile-filters.webp" width="23%" alt="Mobile filter sheet with travel time and categories" />
+  <img src="./app/public/screenshots/atlas-mobile.webp" width="23%" alt="Installable PWA on mobile" />
 </p>
+
+<br/>
+
+<a href="https://abhinav-prabhakar.github.io/BengaluruAtlas/">
+  <img src="./app/public/screenshots/atlas-desktop.webp" alt="The atlas as an installable desktop PWA" />
+</a>
+
+<div align="center"><sub><strong>Installable PWA.</strong> Same map, same list, same detail sheet — with an offline shell.</sub></div>
 
 <br/>
 
@@ -107,45 +126,31 @@
 
 <br/>
 
-> **The honest bit.** The first cards use real road routes from OSRM, adjusted by live readings from 13 instrumented Bengaluru corridors. The rest are modelled from the same speeds, with a baked 24-hour profile when GitHub is unreachable. The list is ordered by travel time, with a small head start for editorial picks and the hour of the day; opening hours are checked against the moment you would arrive, outdoor places settle lower when rain is likely and rise in the dry hour before sunset. Road times are cached locally, and after a rate limit the atlas keeps using the last real routes instead of retrying. Traffic updates every ten minutes; every listing opens Google Maps for turn-by-turn.
+<details>
+<summary><strong>The honest bit</strong></summary>
 
-<div align="center">
+<p>The first cards use real road routes from OSRM, adjusted by live readings from 13 instrumented Bengaluru corridors; the rest are modelled from the same speeds. Ordering leans on travel time, editorial picks, the hour, golden light, and rain that is actually falling or close — a shower four hours away leaves the list alone. Opening hours are checked against the moment you arrive, road times are cached by neighbourhood, and a rate limit is met with quiet reuse instead of retries.</p>
 
-<strong>Saved &amp; visited</strong> stays in your browser · <strong>saved lists share as plain links</strong> · <strong>shareable links</strong> remember the whole view · <strong>37 moods</strong> · <strong>206 trails</strong> · <strong>live traffic</strong> · <strong>follows your device theme</strong> · <strong>installable PWA with offline shell</strong> · <strong>no accounts</strong> · <strong>no tracking</strong> · <strong>no keys</strong>
+</details>
 
-</div>
+<details>
+<summary><strong>Run it</strong></summary>
 
-<br/>
-
-<div align="center">
-  <h3>Built with</h3>
-  <p>React 19 · TypeScript · Vite · MapLibre GL · OpenFreeMap<br/>
-  Self-hosted Fraunces, Manrope and JetBrains Mono · a warm, hand-recoloured paper-and-ink basemap</p>
-</div>
-
-<br/>
-
-<table>
-<tr>
-<td width="50%" valign="top">
-
-<p><strong>Run it</strong></p>
-
-<pre><code>cd app
+```bash
+cd app
 npm install
 npm run dev
-npm run build   # → ../docs, ready for Pages</code></pre>
+npm run build   # → ../docs, ready for Pages
+```
 
-</td>
-<td width="50%" valign="top">
+</details>
 
-<p><strong>The data</strong></p>
+<details>
+<summary><strong>The data</strong></summary>
 
-<p>9,362 OpenStreetMap places, cleaned and categorised. 201 editorial picks with best times and a point of view; 188 places carry an openly licensed photograph, and the rest get a designed cover. Traffic is modelled from 13 instrumented corridors; live readings come from the <a href="https://github.com/thecont1/traffic-monitor-lizard">traffic-monitor-lizard</a> dataset. 206 trails are assembled from curated anchors, and every stop links back to the atlas. Trail stops and area notes live in <a href="./data/"><code>data/</code></a>; the build scripts are in <a href="./scripts/"><code>scripts/</code></a>.</p>
+<p>9,362 OpenStreetMap places, 201 editorial picks, 53 neighbourhoods, 206 trails, 188 openly licensed photographs, and 13 instrumented traffic corridors. Route times from OSRM / OpenStreetMap.de. Weather from Open-Meteo. No accounts, no tracking, no keys.</p>
 
-</td>
-</tr>
-</table>
+</details>
 
 <div align="center">
   <sub>Map data © OpenStreetMap contributors (ODbL) · styles and tiles by <a href="https://openfreemap.org">OpenFreeMap</a> · routing by <a href="https://routing.openstreetmap.de">OSRM / OpenStreetMap.de</a> · photographs from Wikimedia Commons · weather by <a href="https://open-meteo.com">Open-Meteo</a>.</sub>
